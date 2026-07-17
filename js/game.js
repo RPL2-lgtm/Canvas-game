@@ -26,17 +26,23 @@ bgImg.src = 'assets/images/bg.png';
 const walkSheet = new Image();
 let walkSheetLoaded = false;
 walkSheet.onload = () => { walkSheetLoaded = true; };
-walkSheet.src = 'assets/images/walk_anim_sheet.png'; // sesuaikan nama file
+walkSheet.src = 'assets/images/run_anim_sheet.png';
 
 const SPRITE = {
-  frameWidth: 32,     // TODO: ganti sesuai ukuran 1 frame sprite sheet kamu
-  frameHeight: 32,    // TODO: ganti sesuai ukuran 1 frame sprite sheet kamu
-  totalFrames: 14,    // TODO: sesuaikan jumlah frame animasi (14 sesuai yang kamu punya)
-  frameSpeed: 6,      // makin kecil = animasi makin cepat (dalam tick)
+  frameWidth: 16,     // 1 frame = 16x16 px (hasil analisa run_anim_sheet.png)
+  frameHeight: 16,
+  totalFrames: 4,      // 4 frame animasi per baris/arah
+  frameSpeed: 8,       // makin kecil = animasi makin cepat (dalam tick)
+  // Urutan baris di sprite sheet (0 = paling atas). Sesuaikan kalau urutan arah beda:
+  rowDown: 0,
+  rowLeft: 2,
+  rowRight: 6,
+  rowUp: 4,
 };
 
 let currentFrame = 0;
 let frameTimer = 0;
+let currentRow = SPRITE.rowDown; // baris aktif sesuai arah gerak terakhir
 
 // ============================================
 // DOM ELEMENTS
@@ -195,10 +201,10 @@ function update() {
   if (dialogOpen) return;
 
   let dx = 0, dy = 0;
-  if (keys['w'] || keys['arrowup']) dy -= 1;
-  if (keys['s'] || keys['arrowdown']) dy += 1;
-  if (keys['a'] || keys['arrowleft']) { dx -= 1; player.facing = -1; }
-  if (keys['d'] || keys['arrowright']) { dx += 1; player.facing = 1; }
+  if (keys['w'] || keys['arrowup']) { dy -= 1; currentRow = SPRITE.rowUp; }
+  if (keys['s'] || keys['arrowdown']) { dy += 1; currentRow = SPRITE.rowDown; }
+  if (keys['a'] || keys['arrowleft']) { dx -= 1; player.facing = -1; currentRow = SPRITE.rowLeft; }
+  if (keys['d'] || keys['arrowright']) { dx += 1; player.facing = 1; currentRow = SPRITE.rowRight; }
 
   player.moving = (dx !== 0 || dy !== 0);
 
@@ -280,31 +286,16 @@ function drawSlash() {
 
 function drawPlayer() {
   if (walkSheetLoaded) {
-    // --- MODE SPRITE: aktif otomatis begitu walk_anim_sheet.png ketemu ---
-    ctx.save();
-    if (player.facing === -1) {
-      // flip horizontal biar sprite ngadep kiri
-      ctx.translate(player.x + player.w, player.y);
-      ctx.scale(-1, 1);
-      ctx.drawImage(
-        walkSheet,
-        currentFrame * SPRITE.frameWidth, 0,
-        SPRITE.frameWidth, SPRITE.frameHeight,
-        0, 0,
-        player.w, player.h
-      );
-    } else {
-      ctx.drawImage(
-        walkSheet,
-        currentFrame * SPRITE.frameWidth, 0,
-        SPRITE.frameWidth, SPRITE.frameHeight,
-        player.x, player.y,
-        player.w, player.h
-      );
-    }
-    ctx.restore();
+    // --- MODE SPRITE ---
+    ctx.drawImage(
+      walkSheet,
+      currentFrame * SPRITE.frameWidth, currentRow * SPRITE.frameHeight,
+      SPRITE.frameWidth, SPRITE.frameHeight,
+      player.x, player.y,
+      player.w, player.h
+    );
   } else {
-    // --- MODE PLACEHOLDER: dipakai selama sprite belum ada ---
+    // --- MODE PLACEHOLDER: dipakai selama sprite belum ke-load ---
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.w, player.h);
     ctx.fillStyle = '#fff';

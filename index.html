@@ -9,7 +9,31 @@
 </head>
 <body>
 
-    <canvas id="game" width="800" height="500"></canvas>
+    <div id="gameContainer">
+
+        <canvas id="game" width="800" height="500"></canvas>
+
+        <!-- Prompt -->
+        <div id="prompt">
+            Tekan E
+        </div>
+
+        <!-- Dialog -->
+        <div id="dialogBox">
+            <p id="dialogText"></p>
+            <div id="choices"></div>
+        </div>
+
+        <!-- Gold -->
+        <div id="goldUI">
+            Gold :
+            <span id="goldCount">0</span>
+        </div>
+
+        <!-- Floating Text -->
+        <div id="floatText"></div>
+
+    </div>
 
     <script src="js/game.js"></script>
 
