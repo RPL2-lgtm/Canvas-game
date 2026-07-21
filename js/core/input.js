@@ -12,13 +12,32 @@ class Input {
 
   init(canvas) {
     this._canvas = canvas;
+    const GAME_KEYS = new Set([
+      'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'KeyI', 'KeyC', 'Escape'
+    ]);
+
     window.addEventListener('keydown', (e) => {
+      if (GAME_KEYS.has(e.code)) {
+        e.preventDefault();
+
+        // PENTING: apapun yang lagi fokus (tombol mana pun), langsung lepas.
+        // Ini titik pusat fix-nya — jadi gak perlu blur() manual di tiap file lagi,
+        // dan gak akan "kadang gagal" lagi karena cuma ada satu tempat yang ngatur ini.
+        const active = document.activeElement;
+        if (active && active !== document.body && active.tagName !== 'CANVAS') {
+          active.blur();
+        }
+      }
       if (!this.keys.has(e.code)) this.justPressed.add(e.code);
       this.keys.add(e.code);
     });
+
     window.addEventListener('keyup', (e) => {
+      if (GAME_KEYS.has(e.code)) e.preventDefault();
       this.keys.delete(e.code);
     });
+
     canvas.addEventListener('mousemove', (e) => {
       const rect = canvas.getBoundingClientRect();
       this.mouse.x = ((e.clientX - rect.left) / rect.width) * canvas.width;
@@ -40,7 +59,6 @@ class Input {
     return this.justPressed.has(code);
   }
 
-  // Dipanggil di akhir tiap frame oleh game loop supaya "just pressed" cuma valid 1 frame.
   endFrame() {
     this.justPressed.clear();
     this.mouse.justClicked = false;
