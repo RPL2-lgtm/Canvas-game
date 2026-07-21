@@ -3,9 +3,10 @@ window.G = window.G || {};
 G.enemy = G.enemy || {};
 
 G.enemy.spawn = {
+  // Menentukan titik spawn di luar layar, di sekitar posisi player, dalam batas dunia.
   randomEdgePosition(player, worldW, worldH, margin = 60) {
     const side = G.core.rng.int(0, 3);
-    const camRange = 500;
+    const camRange = 500; // jarak spawn dari player
     let x, y;
     switch (side) {
       case 0: x = player.x - camRange; y = player.y + G.core.rng.range(-camRange, camRange); break;

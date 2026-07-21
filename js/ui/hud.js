@@ -6,6 +6,7 @@ G.ui.hud = {
   draw(ctx, player, waveManager) {
     ctx.save();
 
+    // --- HP bar ---
     const hpW = 220, hpH = 16, pad = 16;
     const hpPct = Math.max(0, player.stats.hp / player.stats.totalMaxHP);
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
@@ -20,6 +21,7 @@ G.ui.hud = {
     ctx.textAlign = 'center';
     ctx.fillText(`${Math.ceil(player.stats.hp)} / ${player.stats.totalMaxHP}`, pad + hpW / 2, pad + 12);
 
+    // --- EXP bar ---
     const expY = pad + hpH + 6;
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.fillRect(pad, expY, hpW, 8);
@@ -28,6 +30,7 @@ G.ui.hud = {
     ctx.strokeStyle = '#fff';
     ctx.strokeRect(pad, expY, hpW, 8);
 
+    // status racun
     if (player.poison.active) {
       ctx.fillStyle = '#7cd66b';
       ctx.font = 'bold 12px sans-serif';
@@ -35,10 +38,18 @@ G.ui.hud = {
       ctx.fillText(`☠ Teracun (${player.poison.timeLeft.toFixed(1)}s)`, pad, expY + 46);
     }
 
+    // --- Level & wave text ---
     ctx.textAlign = 'left';
     ctx.font = 'bold 13px sans-serif';
     ctx.fillStyle = '#fff';
     ctx.fillText(`Level ${player.levelSystem.level}`, pad, expY + 26);
+
+    ctx.font = '11px sans-serif';
+    ctx.fillStyle = '#bbb';
+    const raceLabel = player.mimicRaceId
+      ? `${player.race.emoji} ${player.race.name} (copy: ${player.mimicRaceId})`
+      : `${player.race.emoji} ${player.race.name}`;
+    ctx.fillText(raceLabel, pad, expY + (player.poison.active ? 64 : 44));
 
     ctx.textAlign = 'right';
     const waveLabel = waveManager.state === 'intermission'
@@ -46,6 +57,7 @@ G.ui.hud = {
       : `Wave ${waveManager.waveNumber}${waveManager.currentWave && waveManager.currentWave.isBoss ? ' — BOSS' : ''}`;
     ctx.fillText(waveLabel, G.CONST.CANVAS_W - pad, pad + 12);
 
+    // gold
     ctx.fillText(`Gold: ${player.gold}`, G.CONST.CANVAS_W - pad, pad + 30);
 
     ctx.restore();

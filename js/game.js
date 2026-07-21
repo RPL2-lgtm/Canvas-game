@@ -2,10 +2,12 @@
 window.G = window.G || {};
 
 class Game {
-  constructor(canvas, assets) {
+  constructor(canvas, assets, raceId = 'human', mimicRaceId = null) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.assets = assets;
+    this.raceId = raceId;
+    this.mimicRaceId = mimicRaceId;
 
     this.worldW = G.CONST.CANVAS_W * 2.2;
     this.worldH = G.CONST.CANVAS_H * 2.2;
@@ -26,8 +28,9 @@ class Game {
   }
 
   _setupPlayer() {
-    this.player = new G.player.Player(this.worldW / 2, this.worldH / 2, this.assets.playerSheet);
+    this.player = new G.player.Player(this.worldW / 2, this.worldH / 2, this.assets.playerSheet, this.raceId, this.mimicRaceId);
     G.items.iconImage = this.assets.iconsSheet;
+    // starter weapon supaya player tidak kosong tangan
     const starter = G.items.getById('sword_iron');
     starter.applyTo(this.player);
     this.player.addItem(starter.id);
@@ -52,7 +55,7 @@ class Game {
     G.ui.statsMenu.init();
     G.chest.chestUI.init();
     G.ui.pause.init({
-      onRestart: () => this.restart(),
+      onRestart: () => this.restart(), // restart dari pause: pakai race yang sama
       onSave: () => {
         G.core.save.write({
           bestWave: Math.max(this.waveManager.waveNumber, (G.core.save.read() || {}).bestWave || 0),
@@ -82,15 +85,19 @@ class Game {
   tryOpenChest() {
     for (const chest of this.chests) {
       if (!chest.opened && chest.playerNearby(this.player)) {
-        const loot = chest.open();
+        // kirim this.player biar Dwarf (Legendary Drop +15%) bisa dihitung
+        const loot = chest.open(this.player);
         if (loot) {
           loot.items.forEach((item) => {
+            // consumable (potion, dsb) cuma disimpan, baru aktif saat di-klik "Gunakan" di inventory
             if (item.type !== 'consumable') item.applyTo(this.player);
             this.player.addItem(item.id);
           });
           this.player.gold += loot.gold;
           G.chest.chestUI.show(loot);
 
+          // penting: kalau panel inventory lagi kebuka, langsung refresh isinya
+          // biar item baru langsung kelihatan tanpa harus tutup-buka lagi
           if (G.ui.inventory.visible) G.ui.inventory.render(this.player);
         }
         break;
@@ -105,6 +112,7 @@ class Game {
       p.life -= dt;
     });
 
+    // proyektil musuh vs player
     this.projectiles.forEach((p) => {
       if (p.owner !== 'enemy' || p.life <= 0) return;
       const dist = G.utils.math.distance(p.x, p.y, this.player.x, this.player.y);
@@ -126,6 +134,7 @@ class Game {
       onHitEnemy: (enemy, dmg, isCrit) => {
         this.pushFloatingText(enemy.x, enemy.y - 16, `${dmg}${isCrit ? '!' : ''}`, isCrit ? '#f39c12' : '#fff');
         if (enemy.dead) {
+          this.player.registerKill(); // dipakai buat stacking damage Demon
           const levels = this.player.grantExp(enemy.expReward);
           if (levels > 0) this.pushFloatingText(this.player.x, this.player.y - 30, 'LEVEL UP!', '#2ecc71');
         }
@@ -143,6 +152,7 @@ class Game {
       }
     });
 
+    // pisahkan antar enemy biar tidak numpuk total
     const enemies = this.waveManager.enemies;
     for (let i = 0; i < enemies.length; i++) {
       for (let j = i + 1; j < enemies.length; j++) {
@@ -161,8 +171,13 @@ class Game {
     this.camera.follow(this.player.x, this.player.y);
 
     if (this.player.stats.isDead()) {
-      this.running = false;
-      G.ui.gameOver.show(this.waveManager, this.player);
+      // Undead: coba revive dulu sebelum beneran game over
+      if (this.player.tryRevive()) {
+        this.pushFloatingText(this.player.x, this.player.y - 40, 'REVIVE!', '#c48bf5');
+      } else {
+        this.running = false;
+        G.ui.gameOver.show(this.waveManager, this.player);
+      }
     }
   }
 
@@ -171,6 +186,7 @@ class Game {
     ctx.fillStyle = '#1c2b1e';
     ctx.fillRect(0, 0, G.CONST.CANVAS_W, G.CONST.CANVAS_H);
 
+    // grid tanah sederhana biar ada rasa "dunia" tanpa perlu tileset
     const tile = G.CONST.TILE_SIZE;
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
     const offsetX = -this.camera.x % tile;
@@ -189,9 +205,11 @@ class Game {
 
     this.chests.forEach((c) => c.draw(ctx, this.camera, c.playerNearby(this.player)));
 
+    // urutkan entitas by Y biar ada efek depth sederhana
     const drawables = [...this.waveManager.enemies, this.player].sort((a, b) => a.y - b.y);
     drawables.forEach((d) => d.draw(ctx, this.camera));
 
+    // proyektil
     ctx.fillStyle = '#f1c40f';
     this.projectiles.forEach((p) => {
       const s = this.camera.worldToScreen(p.x, p.y);
@@ -200,6 +218,7 @@ class Game {
       ctx.fill();
     });
 
+    // floating text (damage numbers, dsb)
     this.floatingTexts.forEach((f) => {
       const s = this.camera.worldToScreen(f.x, f.y);
       ctx.globalAlpha = Math.max(0, f.life);
@@ -231,15 +250,17 @@ class Game {
     requestAnimationFrame((t) => this.loop(t));
   }
 
-  restart() {
+  // raceId/mimicRaceId opsional: kalau gak dikasih (misal restart dari pause menu),
+  // pakai race yang lagi aktif sekarang, jangan direset ke default.
+  restart(raceId, mimicRaceId) {
     G.ui.pause.hide();
     G.ui.gameOver.hide();
+    this.raceId = raceId || this.raceId;
+    this.mimicRaceId = mimicRaceId !== undefined ? mimicRaceId : this.mimicRaceId;
+
     this.waveManager = new G.wave.WaveManager(this.worldW, this.worldH);
     this._setupWaveManager();
-    this.player = new G.player.Player(this.worldW / 2, this.worldH / 2, this.assets.playerSheet);
-    const starter = G.items.getById('sword_iron');
-    starter.applyTo(this.player);
-    this.player.addItem(starter.id);
+    this._setupPlayer();
     this.chests = [];
     this.projectiles = [];
     this.floatingTexts = [];

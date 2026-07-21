@@ -55,6 +55,35 @@
 .loot-icon {
   font-size: 20px;
 }
+.inv-item {
+  justify-content: space-between;
+}
+.btn-use-item {
+  padding: 5px 10px;
+  font-size: 11px;
+  background: #2d8f4e;
+  flex-shrink: 0;
+}
+.btn-use-item:hover {
+  background: #37ab5f;
+}
+.equipped-tag {
+  font-size: 10px;
+  color: #6ee08a;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.combo-card {
+  border: 1px solid #ffd75e;
+  background: rgba(255, 215, 94, 0.08);
+}
+.btn-combo {
+  background: #d4a017;
+}
+.btn-combo:hover {
+  background: #f0b52c;
+}
 
 .stats-list li {
   display: flex;
@@ -113,14 +142,4 @@
   color: #ffd75e;
   font-weight: 700;
   margin-bottom: 10px;
-}
-.combo-card {
-  border: 1px solid #ffd75e;
-  background: rgba(255, 215, 94, 0.08);
-}
-.btn-combo {
-  background: #d4a017;
-}
-.btn-combo:hover {
-  background: #f0b52c;
 }

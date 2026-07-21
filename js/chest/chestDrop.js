@@ -3,11 +3,11 @@ window.G = window.G || {};
 G.chest = G.chest || {};
 
 G.chest.chestDrop = {
-  generateLoot(chestTier = 1) {
+  generateLoot(chestTier = 1, player = null) {
     const rolls = 1 + (chestTier > 1 ? 1 : 0);
     const loot = [];
     for (let i = 0; i < rolls; i++) {
-      const rarity = G.chest.chestRNG.rollRarity();
+      const rarity = G.chest.chestRNG.rollRarity(player);
       const item = G.chest.chestRNG.rollItemForRarity(rarity);
       loot.push(item);
     }

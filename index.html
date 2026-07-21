@@ -11,7 +11,7 @@
 </head>
 <body>
 <div id="app">
-
+ 
   <!-- ===== Main Menu ===== -->
   <div id="main-menu" class="overlay visible">
     <div class="menu-box">
@@ -26,6 +26,14 @@
         E — buka chest terdekat<br/>
         I — inventory &nbsp; C — statistik &nbsp; Esc — pause
       </div>
+    </div>
+  </div>
+
+  <!-- ===== Race Select Overlay ===== -->
+  <div id="race-select-overlay" class="overlay">
+    <div class="menu-box race-box">
+      <h1 id="race-select-title">Pilih Race</h1>
+      <div id="race-grid" class="race-grid"></div>
     </div>
   </div>
 
@@ -60,7 +68,7 @@
   <div id="stats-panel" class="panel"></div>
 
   <!-- ===== Game Canvas ===== -->
-  <canvas id="game-canvas"></canvas>
+  <canvas id="game-canvas" tabindex="-1"></canvas>
   <div id="hud-hint">WASD gerak · Space serang · E buka chest · I inventory · C statistik · Esc pause</div>
 
 </div>
@@ -89,6 +97,7 @@
 <script src="js/items/luck.js"></script>
 
 <!-- player -->
+<script src="js/player/races.js"></script>
 <script src="js/player/stats.js"></script>
 <script src="js/player/exp.js"></script>
 <script src="js/player/level.js"></script>
@@ -119,6 +128,7 @@
 
 <!-- ui -->
 <script src="js/ui/hud.js"></script>
+<script src="js/ui/raceSelect.js"></script>
 <script src="js/ui/inventory.js"></script>
 <script src="js/ui/statsMenu.js"></script>
 <script src="js/ui/pause.js"></script>

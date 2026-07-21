@@ -8,9 +8,14 @@ G.ui.pause = {
 
   init(callbacks) {
     this.el = document.getElementById('pause-overlay');
-    document.getElementById('btn-resume').onclick = () => this.hide();
-    document.getElementById('btn-restart').onclick = () => callbacks.onRestart();
-    document.getElementById('btn-save').onclick = () => callbacks.onSave();
+    const btnResume = document.getElementById('btn-resume');
+    const btnRestart = document.getElementById('btn-restart');
+    const btnSave = document.getElementById('btn-save');
+    const canvas = document.getElementById('game-canvas');
+
+    btnResume.onclick = () => { btnResume.blur(); canvas.focus(); this.hide(); };
+    btnRestart.onclick = () => { btnRestart.blur(); canvas.focus(); callbacks.onRestart(); };
+    btnSave.onclick = () => { btnSave.blur(); canvas.focus(); callbacks.onSave(); };
   },
 
   toggle() {

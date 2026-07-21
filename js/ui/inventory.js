@@ -23,6 +23,7 @@ G.ui.inventory = {
       return;
     }
 
+    // cek apakah punya kombo Ramuan Hijau + Ramuan Merah
     const hasGreen = player.inventory.includes('potion_green');
     const hasRed = player.inventory.includes('potion_red');
     const comboHtml = (hasGreen && hasRed)
@@ -55,6 +56,7 @@ G.ui.inventory = {
       .join('');
     this.el.innerHTML = `<h3>Inventory</h3><div class="inv-list">${comboHtml}${rows}</div>`;
 
+    // pasang listener ke tiap tombol "Gunakan" (consumable saja, kombo dikecualikan)
     this.el.querySelectorAll('.btn-use-item:not(.btn-combo)').forEach((btn) => {
       btn.addEventListener('click', () => {
         const index = parseInt(btn.dataset.index, 10);
@@ -74,7 +76,7 @@ G.ui.inventory = {
     }
   },
 
-  onItemUsed: null,
+  onItemUsed: null, // optional callback(item), di-set dari game.js untuk feedback visual
 
   useItem(player, index) {
     const id = player.inventory[index];
@@ -86,6 +88,7 @@ G.ui.inventory = {
     if (this.onItemUsed) this.onItemUsed(item);
   },
 
+  // pakai Ramuan Hijau + Merah sekaligus: hilangin racun DAN pulihkan 30% HP dalam satu aksi
   useCombo(player) {
     const greenIdx = player.inventory.indexOf('potion_green');
     const redIdx = player.inventory.indexOf('potion_red');
@@ -94,6 +97,7 @@ G.ui.inventory = {
     G.items.getById('potion_green').useOn(player);
     G.items.getById('potion_red').useOn(player);
 
+    // hapus satu instance masing-masing (index dicari ulang karena splice pertama bisa geser posisi)
     player.inventory.splice(player.inventory.indexOf('potion_green'), 1);
     player.inventory.splice(player.inventory.indexOf('potion_red'), 1);
 

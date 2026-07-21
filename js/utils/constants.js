@@ -55,11 +55,11 @@ G.CONST = {
     critChance: 0.05
   },
 
-WAVE: {
-    baseEnemyCount: 50,
-    countPerWave: 4,
-    timeBetweenWaves: 4,
-    spawnWindowSeconds: 8
+  WAVE: {
+    baseEnemyCount: 50,   // minimal 50 musuh per wave (sesuai request)
+    countPerWave: 4,      // makin nambah terus tiap wave
+    timeBetweenWaves: 4,  // detik jeda setelah wave clear
+    spawnWindowSeconds: 8 // semua musuh di 1 wave selesai muncul dalam ~8 detik, walau jumlahnya banyak
   },
 
   STORAGE_KEY: 'canvas_game_save_v1'

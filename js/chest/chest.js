@@ -16,10 +16,10 @@ class Chest {
     return G.utils.math.distance(this.x, this.y, player.x, player.y) < this.radius + player.radius + 12;
   }
 
-  open() {
+  open(player) {
     if (this.opened) return null;
     this.opened = true;
-    return G.chest.chestDrop.generateLoot(this.tier);
+    return G.chest.chestDrop.generateLoot(this.tier, player);
   }
 
   draw(ctx, camera, showPrompt) {

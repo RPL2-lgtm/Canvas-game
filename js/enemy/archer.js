@@ -8,8 +8,8 @@ class Archer extends G.enemy.Enemy {
       radius: 11,
       speed: 60,
       hp: Math.round(10 * hpMult),
-      damage: Math.round(3 * dmgMult),
-      expReward: 99,
+      damage: Math.round(3 * dmgMult), // diturunin dari 5 -> 3
+      expReward: 5,
       color: '#8e44ad',
       type: 'archer',
       attackCooldown: 1.6

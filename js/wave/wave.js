@@ -13,8 +13,8 @@ class Wave {
 
   rollEnemyType() {
     const roll = G.core.rng.next();
-    if (roll < 0.35) return 'poison';
-    if (roll < 0.35 + 0.325) return 'goblin';
+    if (roll < 0.35) return 'poison';        // 35% chance sesuai request
+    if (roll < 0.35 + 0.325) return 'goblin'; // sisanya dibagi rata goblin/archer
     return 'archer';
   }
 
@@ -22,6 +22,7 @@ class Wave {
     const queue = [];
     if (this.isBoss) {
       queue.push('boss');
+      // wave boss tetap ramai, jumlah pendamping ikut naik seiring wave
       const companions = Math.min(20, 6 + this.number);
       for (let i = 0; i < companions; i++) queue.push(this.rollEnemyType());
       return queue;

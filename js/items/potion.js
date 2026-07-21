@@ -12,7 +12,7 @@ G.items.register({
   description: 'Pulihkan 30% dari Max HP',
   onUse(player) {
     const amount = Math.round(player.stats.totalMaxHP * 0.3);
-    player.stats.heal(amount);
+    player.heal(amount);
   }
 });
 
@@ -38,6 +38,6 @@ G.items.register({
   symbol: '❤️',
   description: 'Pulihkan 100% HP',
   onUse(player) {
-    player.stats.heal(player.stats.totalMaxHP);
+    player.heal(player.stats.totalMaxHP);
   }
 });

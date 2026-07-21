@@ -7,6 +7,7 @@ window.G = window.G || {};
   canvas.height = G.CONST.CANVAS_H;
 
   G.core.input.init(canvas);
+  G.ui.raceSelect.init();
 
   const menuEl = document.getElementById('main-menu');
   const loadingEl = document.getElementById('loading-text');
@@ -34,24 +35,28 @@ window.G = window.G || {};
 
   let game = null;
 
-  startBtn.addEventListener('click', () => {
+  function launchGame(raceId, mimicRaceId) {
     menuEl.classList.remove('visible');
     canvas.classList.add('visible');
     document.getElementById('hud-hint').classList.add('visible');
+    canvas.focus();
 
     if (!game) {
-      game = new G.Game(canvas, assets);
+      game = new G.Game(canvas, assets, raceId, mimicRaceId);
       game.start();
     } else {
-      game.restart();
+      game.restart(raceId, mimicRaceId);
     }
+  }
+
+  startBtn.addEventListener('click', () => {
+    startBtn.blur(); // penting: lepas fokus biar Space gak ke-trigger klik tombol ini lagi
+    G.ui.raceSelect.show((raceId, mimicRaceId) => launchGame(raceId, mimicRaceId));
   });
 
-  // tombol restart di layar game over & pause juga harus kembali sinkron dengan instance game
-  document.getElementById('btn-gameover-restart').addEventListener('click', () => {
-    if (game) game.restart();
-  });
-  document.getElementById('btn-restart').addEventListener('click', () => {
-    if (game) game.restart();
+  // main lagi dari game-over: pilih race lagi (barangkali mau ganti race)
+  document.getElementById('btn-gameover-restart').addEventListener('click', (e) => {
+    e.currentTarget.blur();
+    G.ui.raceSelect.show((raceId, mimicRaceId) => launchGame(raceId, mimicRaceId));
   });
 })();

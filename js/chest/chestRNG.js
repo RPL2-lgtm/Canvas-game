@@ -5,12 +5,19 @@ G.chest = G.chest || {};
 G.chest.chestRNG = {
   rarityTable: [
     { rarity: 'common', weight: 60 },
-    { rarity: 'rare', weight: 50 },
-    { rarity: 'epic', weight: 40 },
-    { rarity: 'legendary', weight: 60 }
+    { rarity: 'rare', weight: 30 },
+    { rarity: 'epic', weight: 9 },
+    { rarity: 'legendary', weight: 1 }
   ],
 
-  rollRarity() {
+  rollRarity(player) {
+    // Dwarf passive: Legendary Drop +15% (relatif terhadap weight dasarnya)
+    if (player && player.hasPassive && player.hasPassive('dwarf')) {
+      const table = this.rarityTable.map((r) => ({ ...r }));
+      const legendary = table.find((r) => r.rarity === 'legendary');
+      if (legendary) legendary.weight *= 1.15;
+      return G.core.rng.weightedPick(table).rarity;
+    }
     return G.core.rng.weightedPick(this.rarityTable).rarity;
   },
 
