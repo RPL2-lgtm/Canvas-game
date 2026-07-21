@@ -1,41 +1,130 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Game</title>
-
-    <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pixel Roguelike — Canvas Game</title>
+<link rel="stylesheet" href="css/global.css" />
+<link rel="stylesheet" href="css/game.css" />
+<link rel="stylesheet" href="css/ui.css" />
+<link rel="stylesheet" href="css/menu.css" />
 </head>
 <body>
+<div id="app">
 
-    <div id="gameContainer">
-
-        <canvas id="game" width="800" height="500"></canvas>
-
-        <!-- Prompt -->
-        <div id="prompt">
-            Tekan E
-        </div>
-
-        <!-- Dialog -->
-        <div id="dialogBox">
-            <p id="dialogText"></p>
-            <div id="choices"></div>
-        </div>
-
-        <!-- Gold -->
-        <div id="goldUI">
-            Gold :
-            <span id="goldCount">0</span>
-        </div>
-
-        <!-- Floating Text -->
-        <div id="floatText"></div>
-
+  <!-- ===== Main Menu ===== -->
+  <div id="main-menu" class="overlay visible">
+    <div class="menu-box">
+      <h1>⚔️ PIXEL ROGUELIKE</h1>
+      <p class="subtitle">Bertahan dari gelombang musuh, kumpulkan item dari chest!</p>
+      <p id="loading-text">Memuat asset...</p>
+      <button id="btn-start" disabled>Mulai Game</button>
+      <p id="best-score"></p>
+      <div class="menu-controls">
+        WASD / Arrow — gerak<br/>
+        Space / Klik — serang<br/>
+        E — buka chest terdekat<br/>
+        I — inventory &nbsp; C — statistik &nbsp; Esc — pause
+      </div>
     </div>
+  </div>
 
-    <script src="js/game.js"></script>
+  <!-- ===== Pause Overlay ===== -->
+  <div id="pause-overlay" class="overlay">
+    <div class="menu-box">
+      <h1>⏸ Pause</h1>
+      <div class="overlay-buttons">
+        <button id="btn-resume">Lanjutkan</button>
+        <button id="btn-save">Simpan Progress</button>
+        <button id="btn-restart">Mulai Ulang</button>
+      </div>
+    </div>
+  </div>
 
+  <!-- ===== Game Over Overlay ===== -->
+  <div id="gameover-overlay" class="overlay">
+    <div class="menu-box">
+      <h1>💀 Game Over</h1>
+      <div id="gameover-stats"></div>
+      <div class="overlay-buttons">
+        <button id="btn-gameover-restart">Main Lagi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Chest Loot Popup ===== -->
+  <div id="chest-popup"></div>
+
+  <!-- ===== Side Panels ===== -->
+  <div id="inventory-panel" class="panel"></div>
+  <div id="stats-panel" class="panel"></div>
+
+  <!-- ===== Game Canvas ===== -->
+  <canvas id="game-canvas"></canvas>
+  <div id="hud-hint">WASD gerak · Space serang · E buka chest · I inventory · C statistik · Esc pause</div>
+
+</div>
+
+<!-- ===== Scripts: urutan penting karena tidak pakai module bundler ===== -->
+<!-- utils -->
+<script src="js/utils/constants.js"></script>
+<script src="js/utils/math.js"></script>
+<script src="js/utils/helper.js"></script>
+
+<!-- core -->
+<script src="js/core/rng.js"></script>
+<script src="js/core/timer.js"></script>
+<script src="js/core/input.js"></script>
+<script src="js/core/camera.js"></script>
+<script src="js/core/collision.js"></script>
+<script src="js/core/save.js"></script>
+
+<!-- items (harus sebelum chest & player karena dipakai keduanya) -->
+<script src="js/items/item.js"></script>
+<script src="js/items/sword.js"></script>
+<script src="js/items/bow.js"></script>
+<script src="js/items/axe.js"></script>
+<script src="js/items/shield.js"></script>
+<script src="js/items/potion.js"></script>
+<script src="js/items/luck.js"></script>
+
+<!-- player -->
+<script src="js/player/stats.js"></script>
+<script src="js/player/exp.js"></script>
+<script src="js/player/level.js"></script>
+<script src="js/player/animation.js"></script>
+<script src="js/player/movement.js"></script>
+<script src="js/player/attack.js"></script>
+<script src="js/player/player.js"></script>
+
+<!-- enemy -->
+<script src="js/enemy/enemy.js"></script>
+<script src="js/enemy/ai.js"></script>
+<script src="js/enemy/goblin.js"></script>
+<script src="js/enemy/archer.js"></script>
+<script src="js/enemy/boss.js"></script>
+<script src="js/enemy/spawn.js"></script>
+
+<!-- wave -->
+<script src="js/wave/difficulty.js"></script>
+<script src="js/wave/wave.js"></script>
+<script src="js/wave/waveManager.js"></script>
+
+<!-- chest -->
+<script src="js/chest/chestRNG.js"></script>
+<script src="js/chest/chestDrop.js"></script>
+<script src="js/chest/chest.js"></script>
+<script src="js/chest/chestUI.js"></script>
+
+<!-- ui -->
+<script src="js/ui/hud.js"></script>
+<script src="js/ui/inventory.js"></script>
+<script src="js/ui/statsMenu.js"></script>
+<script src="js/ui/pause.js"></script>
+<script src="js/ui/gameOver.js"></script>
+
+<!-- game core -->
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

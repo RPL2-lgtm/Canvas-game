@@ -1,334 +1,255 @@
-// ============================================
-// SETUP CANVAS
-// ============================================
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-ctx.imageSmoothingEnabled = false; // biar pixel art tetap tajam, ga blur
+// js/game.js
+window.G = window.G || {};
 
-// Biar keyboard event ke-capture dengan baik
-canvas.setAttribute('tabindex', '0');
-window.addEventListener('load', () => canvas.focus());
+class Game {
+  constructor(canvas, assets) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.assets = assets;
 
-// ============================================
-// ASSET: BACKGROUND
-// Taruh file gambar background kamu di: assets/images/bg.png
-// ============================================
-const bgImg = new Image();
-let bgLoaded = false;
-bgImg.onload = () => { bgLoaded = true; };
-bgImg.src = 'assets/images/bg.png';
+    this.worldW = G.CONST.CANVAS_W * 2.2;
+    this.worldH = G.CONST.CANVAS_H * 2.2;
 
-// ============================================
-// ASSET: SPRITE SHEET KARAKTER (nanti diisi)
-// Taruh file sprite kamu di: assets/images/walk_anim_sheet.png
-// Ganti FRAME_WIDTH, FRAME_HEIGHT, TOTAL_FRAMES sesuai sprite sheet asli
-// ============================================
-const walkSheet = new Image();
-let walkSheetLoaded = false;
-walkSheet.onload = () => { walkSheetLoaded = true; };
-walkSheet.src = 'assets/images/run_anim_sheet.png';
+    this.camera = new G.core.Camera(G.CONST.CANVAS_W, G.CONST.CANVAS_H, this.worldW, this.worldH);
+    this.input = G.core.input;
 
-const SPRITE = {
-  frameWidth: 16,     // 1 frame = 16x16 px (hasil analisa run_anim_sheet.png)
-  frameHeight: 16,
-  totalFrames: 4,      // 4 frame animasi per baris/arah
-  frameSpeed: 8,       // makin kecil = animasi makin cepat (dalam tick)
-  // Urutan baris di sprite sheet (0 = paling atas). Sesuaikan kalau urutan arah beda:
-  rowDown: 0,
-  rowLeft: 2,
-  rowRight: 6,
-  rowUp: 4,
-};
+    this.projectiles = [];
+    this.chests = [];
+    this.floatingTexts = [];
 
-let currentFrame = 0;
-let frameTimer = 0;
-let currentRow = SPRITE.rowDown; // baris aktif sesuai arah gerak terakhir
+    this.running = false;
+    this.lastTime = 0;
 
-// ============================================
-// DOM ELEMENTS
-// ============================================
-const promptEl = document.getElementById('prompt');
-const dialogBox = document.getElementById('dialogBox');
-const dialogText = document.getElementById('dialogText');
-const choicesEl = document.getElementById('choices');
-const goldCountEl = document.getElementById('goldCount');
-const floatTextEl = document.getElementById('floatText');
-
-let gold = 0;
-
-// ============================================
-// PLAYER
-// ============================================
-const player = {
-  x: 100,
-  y: (canvas.height - 28) / 2, // otomatis center vertikal
-  w: 28,
-  h: 28,
-  speed: 3,
-  color: '#4fc3f7', // dipakai selama belum ada sprite
-  facing: 1,         // 1 = hadap kanan, -1 = hadap kiri
-  moving: false,
-};
-
-// ============================================
-// MONSTER
-// ============================================
-const monster = {
-  x: 420,
-  y: (canvas.height - 32) / 2,
-  w: 32,
-  h: 32,
-  color: '#e57373',
-  alive: true,
-  name: 'Goblin Liar',
-};
-
-// ============================================
-// INPUT
-// ============================================
-const keys = {};
-let interactionEnabled = false;
-let dialogOpen = false;
-
-window.addEventListener('keydown', (e) => {
-  keys[e.key.toLowerCase()] = true;
-
-  // cegah scroll halaman waktu pakai arrow key
-  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) {
-    e.preventDefault();
+    this._setupPlayer();
+    this._setupWaveManager();
+    this._setupUI();
   }
 
-  if (e.key.toLowerCase() === 'e' && interactionEnabled && !dialogOpen && monster.alive) {
-    openDialog();
+  _setupPlayer() {
+    this.player = new G.player.Player(this.worldW / 2, this.worldH / 2, this.assets.playerSheet);
+    G.items.iconImage = this.assets.iconsSheet;
+    // starter weapon supaya player tidak kosong tangan
+    const starter = G.items.getById('sword_iron');
+    starter.applyTo(this.player);
+    this.player.addItem(starter.id);
   }
-});
 
-window.addEventListener('keyup', (e) => {
-  keys[e.key.toLowerCase()] = false;
-});
-
-// ============================================
-// UTIL
-// ============================================
-function distance(a, b) {
-  const dx = (a.x + a.w / 2) - (b.x + b.w / 2);
-  const dy = (a.y + a.h / 2) - (b.y + b.h / 2);
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-// ============================================
-// DIALOG SYSTEM
-// ============================================
-function openDialog() {
-  dialogOpen = true;
-  dialogBox.style.display = 'block';
-  dialogText.textContent = monster.name + ': "Hei manusia... mau apa kau di sini?"';
-  choicesEl.innerHTML = '';
-
-  const talkBtn = document.createElement('button');
-  talkBtn.className = 'choiceBtn';
-  talkBtn.textContent = 'Bicara';
-  talkBtn.onclick = () => choose('talk');
-
-  const fightBtn = document.createElement('button');
-  fightBtn.className = 'choiceBtn';
-  fightBtn.textContent = 'Bertarung';
-  fightBtn.onclick = () => choose('fight');
-
-  choicesEl.appendChild(talkBtn);
-  choicesEl.appendChild(fightBtn);
-}
-
-function closeDialog() {
-  dialogOpen = false;
-  dialogBox.style.display = 'none';
-  canvas.focus(); // balikin fokus ke game biar keyboard jalan lagi
-}
-
-function choose(option) {
-  if (option === 'talk') {
-    dialogText.textContent = monster.name + ': "Baiklah, pergilah dengan damai."';
-    choicesEl.innerHTML = '';
-    const okBtn = document.createElement('button');
-    okBtn.className = 'choiceBtn';
-    okBtn.textContent = 'Oke';
-    okBtn.onclick = closeDialog;
-    choicesEl.appendChild(okBtn);
-  } else if (option === 'fight') {
-    closeDialog();
-    doFight();
+  _setupWaveManager() {
+    this.waveManager = new G.wave.WaveManager(this.worldW, this.worldH);
+    this.waveManager.onWaveClear = (waveNum) => {
+      const pos = { x: this.player.x + G.utils.math.randomInt ? 0 : 0 };
+      const tier = waveNum % 5 === 0 ? 2 : 1;
+      this.chests.push(new G.chest.Chest(this.player.x + G.core.rng.range(-80, 80), this.player.y + G.core.rng.range(-80, 80), tier));
+      this.pushFloatingText(this.player.x, this.player.y - 40, `Wave ${waveNum} Selesai!`, '#f1c40f');
+    };
+    this.waveManager.begin();
   }
-}
 
-// ============================================
-// COMBAT
-// ============================================
-let slash = null; // { x, y, timer, maxTimer }
+  _setupUI() {
+    G.ui.hud;
+    G.ui.inventory.init();
+    G.ui.statsMenu.init();
+    G.chest.chestUI.init();
+    G.ui.pause.init({
+      onRestart: () => this.restart(),
+      onSave: () => {
+        G.core.save.write({
+          bestWave: Math.max(this.waveManager.waveNumber, (G.core.save.read() || {}).bestWave || 0),
+          bestLevel: Math.max(this.player.levelSystem.level, (G.core.save.read() || {}).bestLevel || 1)
+        });
+        this.pushFloatingText(this.player.x, this.player.y - 40, 'Game disimpan', '#2ecc71');
+      }
+    });
+    G.ui.gameOver.init({ onRestart: () => this.restart() });
+  }
 
-function doFight() {
-  slash = { x: monster.x + monster.w / 2, y: monster.y + monster.h / 2, timer: 0, maxTimer: 18 };
-  monster.alive = false;
+  pushFloatingText(x, y, text, color) {
+    this.floatingTexts.push({ x, y, text, color, life: 1.2, vy: -30 });
+  }
 
-  const earned = 10 + Math.floor(Math.random() * 15);
-  setTimeout(() => {
-    gold += earned;
-    goldCountEl.textContent = gold;
-    showFloatText('+' + earned + ' Gold', monster.x, monster.y);
-  }, 250);
-}
+  spawnProjectile(config) {
+    this.projectiles.push({ ...config, life: 4 });
+  }
 
-function showFloatText(text, x, y) {
-  floatTextEl.textContent = text;
-  floatTextEl.style.left = x + 'px';
-  floatTextEl.style.top = y + 'px';
-  floatTextEl.style.display = 'block';
-  floatTextEl.style.opacity = 1;
-  floatTextEl.style.transition = 'none';
+  handleGlobalKeys() {
+    if (this.input.wasPressed('Escape')) G.ui.pause.toggle();
+    if (this.input.wasPressed('KeyI')) G.ui.inventory.toggle(this.player);
+    if (this.input.wasPressed('KeyC')) G.ui.statsMenu.toggle(this.player);
+    if (this.input.wasPressed('KeyE')) this.tryOpenChest();
+  }
 
-  requestAnimationFrame(() => {
-    floatTextEl.style.transition = 'all 1s ease-out';
-    floatTextEl.style.top = (y - 40) + 'px';
-    floatTextEl.style.opacity = 0;
-  });
-
-  setTimeout(() => { floatTextEl.style.display = 'none'; }, 1000);
-}
-
-// ============================================
-// UPDATE (game logic tiap frame)
-// ============================================
-function update() {
-  if (dialogOpen) return;
-
-  let dx = 0, dy = 0;
-  if (keys['w'] || keys['arrowup']) { dy -= 1; currentRow = SPRITE.rowUp; }
-  if (keys['s'] || keys['arrowdown']) { dy += 1; currentRow = SPRITE.rowDown; }
-  if (keys['a'] || keys['arrowleft']) { dx -= 1; player.facing = -1; currentRow = SPRITE.rowLeft; }
-  if (keys['d'] || keys['arrowright']) { dx += 1; player.facing = 1; currentRow = SPRITE.rowRight; }
-
-  player.moving = (dx !== 0 || dy !== 0);
-
-  const len = Math.sqrt(dx * dx + dy * dy) || 1;
-  player.x += (dx / len) * player.speed;
-  player.y += (dy / len) * player.speed;
-
-  player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
-  player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
-
-  // animasi sprite jalan
-  if (player.moving) {
-    frameTimer++;
-    if (frameTimer > SPRITE.frameSpeed) {
-      currentFrame = (currentFrame + 1) % SPRITE.totalFrames;
-      frameTimer = 0;
+  tryOpenChest() {
+    for (const chest of this.chests) {
+      if (!chest.opened && chest.playerNearby(this.player)) {
+        const loot = chest.open();
+        if (loot) {
+          loot.items.forEach((item) => {
+            item.applyTo(this.player);
+            this.player.addItem(item.id);
+          });
+          this.player.gold += loot.gold;
+          G.chest.chestUI.show(loot);
+        }
+        break;
+      }
     }
-  } else {
-    currentFrame = 0;
-    frameTimer = 0;
   }
 
-  if (monster.alive) {
-    const d = distance(player, monster);
-    interactionEnabled = d < 70;
-    if (interactionEnabled) {
-      promptEl.style.left = (monster.x + monster.w / 2) + 'px';
-      promptEl.style.top = (monster.y - 8) + 'px';
-      promptEl.style.display = 'block';
-    } else {
-      promptEl.style.display = 'none';
+  updateProjectiles(dt) {
+    this.projectiles.forEach((p) => {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+    });
+
+    // proyektil musuh vs player
+    this.projectiles.forEach((p) => {
+      if (p.owner !== 'enemy' || p.life <= 0) return;
+      const dist = G.utils.math.distance(p.x, p.y, this.player.x, this.player.y);
+      if (dist < p.radius + this.player.radius) {
+        this.player.takeDamage(p.damage);
+        p.life = 0;
+      }
+    });
+
+    this.projectiles = this.projectiles.filter((p) => p.life > 0);
+  }
+
+  update(dt) {
+    if (G.ui.pause.paused) return;
+
+    this.handleGlobalKeys();
+
+    this.player.update(dt, this.input, this.waveManager.enemies, this.worldW, this.worldH, {
+      onHitEnemy: (enemy, dmg, isCrit) => {
+        this.pushFloatingText(enemy.x, enemy.y - 16, `${dmg}${isCrit ? '!' : ''}`, isCrit ? '#f39c12' : '#fff');
+        if (enemy.dead) {
+          const levels = this.player.grantExp(enemy.expReward);
+          if (levels > 0) this.pushFloatingText(this.player.x, this.player.y - 30, 'LEVEL UP!', '#2ecc71');
+        }
+      }
+    });
+
+    this.waveManager.update(dt, this.player);
+    this.waveManager.enemies.forEach((enemy) => {
+      if (enemy.type === 'archer') {
+        enemy.update(dt, this.player, (cfg) => this.spawnProjectile(cfg));
+      } else if (enemy.type === 'boss') {
+        enemy.update(dt, this.player, (cfg) => this.spawnProjectile(cfg), () => {});
+      } else {
+        enemy.update(dt, this.player, () => {});
+      }
+    });
+
+    // pisahkan antar enemy biar tidak numpuk total
+    const enemies = this.waveManager.enemies;
+    for (let i = 0; i < enemies.length; i++) {
+      for (let j = i + 1; j < enemies.length; j++) {
+        G.core.collision.resolveCircle(enemies[i], enemies[j]);
+      }
     }
-  } else {
-    promptEl.style.display = 'none';
+
+    this.updateProjectiles(dt);
+
+    this.floatingTexts.forEach((f) => {
+      f.y += f.vy * dt;
+      f.life -= dt;
+    });
+    this.floatingTexts = this.floatingTexts.filter((f) => f.life > 0);
+
+    this.camera.follow(this.player.x, this.player.y);
+
+    if (this.player.stats.isDead()) {
+      this.running = false;
+      G.ui.gameOver.show(this.waveManager, this.player);
+    }
   }
 
-  if (slash) {
-    slash.timer++;
-    if (slash.timer > slash.maxTimer) slash = null;
+  drawBackground() {
+    const ctx = this.ctx;
+    ctx.fillStyle = '#1c2b1e';
+    ctx.fillRect(0, 0, G.CONST.CANVAS_W, G.CONST.CANVAS_H);
+
+    // grid tanah sederhana biar ada rasa "dunia" tanpa perlu tileset
+    const tile = G.CONST.TILE_SIZE;
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    const offsetX = -this.camera.x % tile;
+    const offsetY = -this.camera.y % tile;
+    for (let x = offsetX; x < G.CONST.CANVAS_W; x += tile) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, G.CONST.CANVAS_H); ctx.stroke();
+    }
+    for (let y = offsetY; y < G.CONST.CANVAS_H; y += tile) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(G.CONST.CANVAS_W, y); ctx.stroke();
+    }
+  }
+
+  draw() {
+    const ctx = this.ctx;
+    this.drawBackground();
+
+    this.chests.forEach((c) => c.draw(ctx, this.camera, c.playerNearby(this.player)));
+
+    // urutkan entitas by Y biar ada efek depth sederhana
+    const drawables = [...this.waveManager.enemies, this.player].sort((a, b) => a.y - b.y);
+    drawables.forEach((d) => d.draw(ctx, this.camera));
+
+    // proyektil
+    ctx.fillStyle = '#f1c40f';
+    this.projectiles.forEach((p) => {
+      const s = this.camera.worldToScreen(p.x, p.y);
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // floating text (damage numbers, dsb)
+    this.floatingTexts.forEach((f) => {
+      const s = this.camera.worldToScreen(f.x, f.y);
+      ctx.globalAlpha = Math.max(0, f.life);
+      ctx.fillStyle = f.color;
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(f.text, s.x, s.y);
+      ctx.globalAlpha = 1;
+    });
+
+    G.ui.hud.draw(ctx, this.player, this.waveManager);
+  }
+
+  loop(timestamp) {
+    if (!this.running) return;
+    const dt = Math.min(0.05, (timestamp - this.lastTime) / 1000 || 0);
+    this.lastTime = timestamp;
+
+    this.update(dt);
+    this.draw();
+    this.input.endFrame();
+
+    requestAnimationFrame((t) => this.loop(t));
+  }
+
+  start() {
+    this.running = true;
+    this.lastTime = performance.now();
+    requestAnimationFrame((t) => this.loop(t));
+  }
+
+  restart() {
+    G.ui.pause.hide();
+    G.ui.gameOver.hide();
+    this.waveManager = new G.wave.WaveManager(this.worldW, this.worldH);
+    this._setupWaveManager();
+    this.player = new G.player.Player(this.worldW / 2, this.worldH / 2, this.assets.playerSheet);
+    const starter = G.items.getById('sword_iron');
+    starter.applyTo(this.player);
+    this.player.addItem(starter.id);
+    this.chests = [];
+    this.projectiles = [];
+    this.floatingTexts = [];
+    this.running = true;
+    this.lastTime = performance.now();
+    requestAnimationFrame((t) => this.loop(t));
   }
 }
 
-// ============================================
-// DRAW
-// ============================================
-function drawBackground() {
-  if (bgLoaded) {
-    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'rgba(10, 8, 20, 0.25)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else {
-    ctx.fillStyle = '#1e2530';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-}
-
-function drawSlash() {
-  if (!slash) return;
-  const progress = slash.timer / slash.maxTimer;
-  const alpha = 1 - progress;
-  const radius = 26 + progress * 14;
-
-  ctx.save();
-  ctx.translate(slash.x, slash.y);
-  ctx.rotate(-0.6 + progress * 1.4);
-  ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-  ctx.lineWidth = 5 - progress * 3;
-  ctx.beginPath();
-  ctx.arc(0, 0, radius, -0.9, 0.9);
-  ctx.stroke();
-
-  ctx.strokeStyle = `rgba(245, 215, 110, ${alpha * 0.8})`;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(0, 0, radius - 6, -0.9, 0.9);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawPlayer() {
-  if (walkSheetLoaded) {
-    // --- MODE SPRITE ---
-    ctx.drawImage(
-      walkSheet,
-      currentFrame * SPRITE.frameWidth, currentRow * SPRITE.frameHeight,
-      SPRITE.frameWidth, SPRITE.frameHeight,
-      player.x, player.y,
-      player.w, player.h
-    );
-  } else {
-    // --- MODE PLACEHOLDER: dipakai selama sprite belum ke-load ---
-    ctx.fillStyle = player.color;
-    ctx.fillRect(player.x, player.y, player.w, player.h);
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(player.x + player.w / 2 + player.facing * 6, player.y + 8, 3, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBackground();
-
-  if (monster.alive) {
-    ctx.fillStyle = monster.color;
-    ctx.fillRect(monster.x, monster.y, monster.w, monster.h);
-    ctx.fillStyle = '#fff';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(monster.name, monster.x + monster.w / 2, monster.y - 12);
-  }
-
-  drawPlayer();
-  drawSlash();
-}
-
-// ============================================
-// GAME LOOP
-// ============================================
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-loop();
+G.Game = Game;

@@ -1,0 +1,116 @@
+/* css/ui.css */
+.panel {
+  position: fixed;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%) translateX(20px);
+  width: 280px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: rgba(15, 22, 16, 0.92);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.panel.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+.panel h3 {
+  margin-bottom: 10px;
+  font-size: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  padding-bottom: 8px;
+}
+.empty-note {
+  font-size: 12px;
+  color: #999;
+}
+
+.inv-list, .stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inv-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  padding: 8px;
+}
+.inv-item-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+.inv-item-info small {
+  color: #aaa;
+}
+.loot-icon {
+  font-size: 20px;
+}
+
+.stats-list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(255,255,255,0.08);
+}
+.stats-list li span {
+  font-weight: 700;
+  color: #6ee08a;
+}
+
+/* Chest popup */
+#chest-popup {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+}
+#chest-popup.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+.chest-popup-inner {
+  background: rgba(20, 16, 8, 0.96);
+  border: 1px solid #c0862f;
+  border-radius: 10px;
+  padding: 16px 20px;
+  text-align: center;
+  min-width: 240px;
+}
+.chest-popup-inner h3 {
+  color: #ffce6b;
+  margin-bottom: 10px;
+}
+.loot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.loot-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.loot-gold {
+  color: #ffd75e;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
