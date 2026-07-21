@@ -23,7 +23,7 @@ G.items.register({
   iconKey: 'coin',
   symbol: '🪙',
   description: '+25 Gold',
-  apply(player) {
+  onUse(player) {
     player.gold += 25;
   }
 });

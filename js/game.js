@@ -78,13 +78,14 @@ class Game {
     if (this.input.wasPressed('KeyE')) this.tryOpenChest();
   }
 
-  tryOpenChest() {
+tryOpenChest() {
     for (const chest of this.chests) {
       if (!chest.opened && chest.playerNearby(this.player)) {
         const loot = chest.open();
         if (loot) {
           loot.items.forEach((item) => {
-            item.applyTo(this.player);
+            // consumable (potion, dsb) cuma disimpan, baru aktif saat di-klik "Gunakan" di inventory
+            if (item.type !== 'consumable') item.applyTo(this.player);
             this.player.addItem(item.id);
           });
           this.player.gold += loot.gold;

@@ -10,8 +10,7 @@ G.items.register({
   iconKey: 'potion',
   symbol: '🧪',
   description: 'Pulihkan 30 HP saat dipakai',
-  apply(player) {
-    // consumable: langsung dipakai saat dipungut (simpel untuk roguelike singkat)
+  onUse(player) {
     player.stats.heal(30);
   }
 });
@@ -24,7 +23,7 @@ G.items.register({
   iconKey: 'heart',
   symbol: '❤️',
   description: 'Pulihkan 100% HP',
-  apply(player) {
+  onUse(player) {
     player.stats.heal(player.stats.totalMaxHP);
   }
 });
