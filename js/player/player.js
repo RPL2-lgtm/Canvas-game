@@ -19,10 +19,12 @@ class Player {
     this.isMoving = false;
 
     this.equippedWeapon = 'sword';
-    this.inventory = []; // list item id yang sudah dipungut
+    this.inventory = [];
     this.gold = 0;
 
-    this.invulnTimer = 0; // jeda kebal sesaat setelah kena hit
+    this.invulnTimer = 0;
+
+    this.poison = { active: false, dps: 0, timeLeft: 0, tickTimer: 0 };
   }
 
   update(dt, input, enemies, worldW, worldH, callbacks = {}) {
@@ -31,6 +33,31 @@ class Player {
     G.player.attack.update(this, input, dt, enemies, callbacks.onHitEnemy);
 
     if (this.invulnTimer > 0) this.invulnTimer -= dt;
+    this.updatePoison(dt);
+  }
+
+  updatePoison(dt) {
+    if (!this.poison.active) return;
+    this.poison.timeLeft -= dt;
+    this.poison.tickTimer += dt;
+    if (this.poison.tickTimer >= 1) {
+      this.poison.tickTimer -= 1;
+      this.stats.hp = G.utils.math.clamp(this.stats.hp - this.poison.dps, 0, this.stats.totalMaxHP);
+    }
+    if (this.poison.timeLeft <= 0) this.curePoison();
+  }
+
+  applyPoison(dps, duration) {
+    this.poison.active = true;
+    this.poison.dps = Math.max(this.poison.dps, dps);
+    this.poison.timeLeft = Math.max(this.poison.timeLeft, duration);
+  }
+
+  curePoison() {
+    this.poison.active = false;
+    this.poison.dps = 0;
+    this.poison.timeLeft = 0;
+    this.poison.tickTimer = 0;
   }
 
   takeDamage(amount) {
@@ -51,7 +78,16 @@ class Player {
   draw(ctx, camera) {
     const screen = camera.worldToScreen(this.x, this.y);
 
-    // efek kedip saat invulnerable
+    if (this.poison.active) {
+      ctx.save();
+      ctx.globalAlpha = 0.35 + Math.sin(performance.now() / 150) * 0.1;
+      ctx.fillStyle = '#7cd66b';
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y + 14, this.radius + 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
     if (this.invulnTimer > 0 && Math.floor(this.invulnTimer * 20) % 2 === 0) {
       ctx.globalAlpha = 0.4;
     }
@@ -59,7 +95,6 @@ class Player {
     this.animator.draw(ctx, screen.x, screen.y);
     ctx.globalAlpha = 1;
 
-    // ayunan senjata sederhana: icon senjata muncul di sisi arah hadap saat menyerang
     if (this.isSwinging) {
       const icon = G.items.iconImage;
       const rect = G.CONST.ICONS[this.equippedWeapon] || G.CONST.ICONS.sword;

@@ -114,3 +114,13 @@
   font-weight: 700;
   margin-bottom: 10px;
 }
+.combo-card {
+  border: 1px solid #ffd75e;
+  background: rgba(255, 215, 94, 0.08);
+}
+.btn-combo {
+  background: #d4a017;
+}
+.btn-combo:hover {
+  background: #f0b52c;
+}

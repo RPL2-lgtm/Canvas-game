@@ -3,13 +3,13 @@ window.G = window.G || {};
 G.enemy = G.enemy || {};
 
 class Archer extends G.enemy.Enemy {
-  constructor(x, y, difficultyMult = 1) {
+  constructor(x, y, hpMult = 1, dmgMult = 1) {
     super(x, y, {
       radius: 11,
       speed: 60,
-      hp: Math.round(12 * difficultyMult),
-      damage: Math.round(5 * difficultyMult),
-      expReward: 10,
+      hp: Math.round(10 * hpMult),
+      damage: Math.round(3 * dmgMult),
+      expReward: 5,
       color: '#8e44ad',
       type: 'archer',
       attackCooldown: 1.6

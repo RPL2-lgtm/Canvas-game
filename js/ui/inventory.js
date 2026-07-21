@@ -5,7 +5,6 @@ G.ui = G.ui || {};
 G.ui.inventory = {
   el: null,
   visible: false,
-  onItemUsed: null, // optional callback(item), bisa di-set dari game.js untuk feedback visual
 
   init() {
     this.el = document.getElementById('inventory-panel');
@@ -23,6 +22,20 @@ G.ui.inventory = {
       this.el.innerHTML = `<h3>Inventory</h3><p class="empty-note">Belum ada item. Buka chest untuk mendapatkan item!</p>`;
       return;
     }
+
+    const hasGreen = player.inventory.includes('potion_green');
+    const hasRed = player.inventory.includes('potion_red');
+    const comboHtml = (hasGreen && hasRed)
+      ? `<div class="inv-item combo-card">
+          <span class="loot-icon">🟢🔴</span>
+          <div class="inv-item-info">
+            <strong>Ramuan Gabungan</strong>
+            <small>Hilangkan racun + pulihkan 30% HP sekaligus</small>
+          </div>
+          <button class="btn-use-item btn-combo" id="btn-use-combo">Gunakan Kombo</button>
+        </div>`
+      : '';
+
     const rows = player.inventory
       .map((id, index) => {
         const item = G.items.getById(id);
@@ -40,15 +53,28 @@ G.ui.inventory = {
         </div>`;
       })
       .join('');
-    this.el.innerHTML = `<h3>Inventory</h3><div class="inv-list">${rows}</div>`;
+    this.el.innerHTML = `<h3>Inventory</h3><div class="inv-list">${comboHtml}${rows}</div>`;
 
-    this.el.querySelectorAll('.btn-use-item').forEach((btn) => {
+    this.el.querySelectorAll('.btn-use-item:not(.btn-combo)').forEach((btn) => {
       btn.addEventListener('click', () => {
         const index = parseInt(btn.dataset.index, 10);
         this.useItem(player, index);
+        btn.blur();
+        document.getElementById('game-canvas').focus();
       });
     });
+
+    const comboBtn = document.getElementById('btn-use-combo');
+    if (comboBtn) {
+      comboBtn.addEventListener('click', () => {
+        this.useCombo(player);
+        comboBtn.blur();
+        document.getElementById('game-canvas').focus();
+      });
+    }
   },
+
+  onItemUsed: null,
 
   useItem(player, index) {
     const id = player.inventory[index];
@@ -58,5 +84,20 @@ G.ui.inventory = {
     player.inventory.splice(index, 1);
     this.render(player);
     if (this.onItemUsed) this.onItemUsed(item);
+  },
+
+  useCombo(player) {
+    const greenIdx = player.inventory.indexOf('potion_green');
+    const redIdx = player.inventory.indexOf('potion_red');
+    if (greenIdx === -1 || redIdx === -1) return;
+
+    G.items.getById('potion_green').useOn(player);
+    G.items.getById('potion_red').useOn(player);
+
+    player.inventory.splice(player.inventory.indexOf('potion_green'), 1);
+    player.inventory.splice(player.inventory.indexOf('potion_red'), 1);
+
+    this.render(player);
+    if (this.onItemUsed) this.onItemUsed({ name: 'Ramuan Gabungan' });
   }
 };

@@ -55,10 +55,11 @@ G.CONST = {
     critChance: 0.05
   },
 
-  WAVE: {
-    baseEnemyCount: 4,
-    countPerWave: 1.4,
-    timeBetweenWaves: 4 // detik jeda setelah wave clear
+WAVE: {
+    baseEnemyCount: 50,
+    countPerWave: 4,
+    timeBetweenWaves: 4,
+    spawnWindowSeconds: 8
   },
 
   STORAGE_KEY: 'canvas_game_save_v1'

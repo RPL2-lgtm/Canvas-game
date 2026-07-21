@@ -28,7 +28,6 @@ class Game {
   _setupPlayer() {
     this.player = new G.player.Player(this.worldW / 2, this.worldH / 2, this.assets.playerSheet);
     G.items.iconImage = this.assets.iconsSheet;
-    // starter weapon supaya player tidak kosong tangan
     const starter = G.items.getById('sword_iron');
     starter.applyTo(this.player);
     this.player.addItem(starter.id);
@@ -37,7 +36,6 @@ class Game {
   _setupWaveManager() {
     this.waveManager = new G.wave.WaveManager(this.worldW, this.worldH);
     this.waveManager.onWaveClear = (waveNum) => {
-      const pos = { x: this.player.x + G.utils.math.randomInt ? 0 : 0 };
       const tier = waveNum % 5 === 0 ? 2 : 1;
       this.chests.push(new G.chest.Chest(this.player.x + G.core.rng.range(-80, 80), this.player.y + G.core.rng.range(-80, 80), tier));
       this.pushFloatingText(this.player.x, this.player.y - 40, `Wave ${waveNum} Selesai!`, '#f1c40f');
@@ -48,6 +46,9 @@ class Game {
   _setupUI() {
     G.ui.hud;
     G.ui.inventory.init();
+    G.ui.inventory.onItemUsed = (item) => {
+      this.pushFloatingText(this.player.x, this.player.y - 40, `Pakai ${item.name}`, '#6ee08a');
+    };
     G.ui.statsMenu.init();
     G.chest.chestUI.init();
     G.ui.pause.init({
@@ -78,18 +79,19 @@ class Game {
     if (this.input.wasPressed('KeyE')) this.tryOpenChest();
   }
 
-tryOpenChest() {
+  tryOpenChest() {
     for (const chest of this.chests) {
       if (!chest.opened && chest.playerNearby(this.player)) {
         const loot = chest.open();
         if (loot) {
           loot.items.forEach((item) => {
-            // consumable (potion, dsb) cuma disimpan, baru aktif saat di-klik "Gunakan" di inventory
             if (item.type !== 'consumable') item.applyTo(this.player);
             this.player.addItem(item.id);
           });
           this.player.gold += loot.gold;
           G.chest.chestUI.show(loot);
+
+          if (G.ui.inventory.visible) G.ui.inventory.render(this.player);
         }
         break;
       }
@@ -103,7 +105,6 @@ tryOpenChest() {
       p.life -= dt;
     });
 
-    // proyektil musuh vs player
     this.projectiles.forEach((p) => {
       if (p.owner !== 'enemy' || p.life <= 0) return;
       const dist = G.utils.math.distance(p.x, p.y, this.player.x, this.player.y);
@@ -142,7 +143,6 @@ tryOpenChest() {
       }
     });
 
-    // pisahkan antar enemy biar tidak numpuk total
     const enemies = this.waveManager.enemies;
     for (let i = 0; i < enemies.length; i++) {
       for (let j = i + 1; j < enemies.length; j++) {
@@ -171,7 +171,6 @@ tryOpenChest() {
     ctx.fillStyle = '#1c2b1e';
     ctx.fillRect(0, 0, G.CONST.CANVAS_W, G.CONST.CANVAS_H);
 
-    // grid tanah sederhana biar ada rasa "dunia" tanpa perlu tileset
     const tile = G.CONST.TILE_SIZE;
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
     const offsetX = -this.camera.x % tile;
@@ -190,11 +189,9 @@ tryOpenChest() {
 
     this.chests.forEach((c) => c.draw(ctx, this.camera, c.playerNearby(this.player)));
 
-    // urutkan entitas by Y biar ada efek depth sederhana
     const drawables = [...this.waveManager.enemies, this.player].sort((a, b) => a.y - b.y);
     drawables.forEach((d) => d.draw(ctx, this.camera));
 
-    // proyektil
     ctx.fillStyle = '#f1c40f';
     this.projectiles.forEach((p) => {
       const s = this.camera.worldToScreen(p.x, p.y);
@@ -203,7 +200,6 @@ tryOpenChest() {
       ctx.fill();
     });
 
-    // floating text (damage numbers, dsb)
     this.floatingTexts.forEach((f) => {
       const s = this.camera.worldToScreen(f.x, f.y);
       ctx.globalAlpha = Math.max(0, f.life);
