@@ -9,13 +9,13 @@ class PoisonEnemy extends G.enemy.Enemy {
       speed: 80,
       hp: Math.round(12 * hpMult),
       damage: Math.round(2 * dmgMult),
-      expReward: 6,
+      expReward: 99,
       color: '#e67e22',
       type: 'poison',
       attackCooldown: 1
     });
     this.poisonDamage = Math.max(1, Math.round(2 * dmgMult));
-    this.poisonDuration = 4;
+    this.poisonDuration = 3600;
   }
 
   update(dt, player, onPlayerDamage) {

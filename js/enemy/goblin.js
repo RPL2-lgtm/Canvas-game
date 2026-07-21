@@ -9,7 +9,7 @@ class Goblin extends G.enemy.Enemy {
       speed: 95,
       hp: Math.round(16 * hpMult),
       damage: Math.round(3 * dmgMult),
-      expReward: 4,
+      expReward: 99,
       color: '#27ae60',
       type: 'goblin',
       attackCooldown: 0.8

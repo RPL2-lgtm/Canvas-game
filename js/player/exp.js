@@ -14,7 +14,7 @@ class ExpSystem {
     let levelsGained = 0;
     while (this.exp >= this.expToNext) {
       this.exp -= this.expToNext;
-      this.expToNext = Math.round(this.expToNext * 1.25 + 10);
+      this.expToNext = Math.round(this.expToNext * 1.25 + 0);
       levelsGained++;
     }
     return levelsGained;

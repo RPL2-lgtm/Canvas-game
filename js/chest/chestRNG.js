@@ -5,9 +5,9 @@ G.chest = G.chest || {};
 G.chest.chestRNG = {
   rarityTable: [
     { rarity: 'common', weight: 60 },
-    { rarity: 'rare', weight: 30 },
-    { rarity: 'epic', weight: 9 },
-    { rarity: 'legendary', weight: 1 }
+    { rarity: 'rare', weight: 50 },
+    { rarity: 'epic', weight: 40 },
+    { rarity: 'legendary', weight: 60 }
   ],
 
   rollRarity() {
