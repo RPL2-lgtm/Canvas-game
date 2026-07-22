@@ -45,20 +45,21 @@ G.player.RACES = [
   {
     id: 'demon', name: 'Demon', emoji: '😈',
     baseDamage: 6, hpStar: 3, defStar: 2, atkSpdStar: 5, critStar: 3, xpStar: 3, moveStar: 3,
-    passiveText: 'Attack Speed sangat tinggi. +0.05% Damage tiap kill (menumpuk terus).'
+    passiveText: 'Domain Api: area di sekitar pemain terus membakar musuh (DOT = Level × 0.05/detik). Attack Speed sangat tinggi. +0.05% Damage tiap kill (menumpuk terus).',
+    awakeningText: 'Domain Expansion: radius domain x2. Primordial Demon: resistance damage +25%, damage +15% (naik +0.5% tiap hit selama aktif).'
   },
   {
     id: 'vampire', name: 'Vampire', emoji: '🧛',
     baseDamage: 6, hpStar: 3, defStar: 3, atkSpdStar: 4, critStar: 3, xpStar: 3, moveStar: 3,
-    passiveText: 'Life Steal 15% dari damage yang diberikan.',
+    passiveText: 'Regenerasi dari darah musuh: 1 HP/detik (+0.05/level), maksimal 7% Max HP/detik.',
     weaknessText: 'Kena racun 2x lebih parah',
-    awakeningText: 'Blood Domain'
+    awakeningText: 'Blood Domain: serangan jadi area di sekitar pemain. Regen berubah jadi dari damage diterima: 2 HP/detik (+0.05% MaxHP/level), maksimal 15% Max HP/detik.'
   },
   {
     id: 'anomaly', name: 'Anomaly', emoji: '🌀',
     baseDamage: 2, hpStar: 3, defStar: 3, atkSpdStar: 3, critStar: 3, xpStar: 3, moveStar: 3,
     passiveText: 'Semua stat +15%.',
-    awakeningText: 'Pilih 1 race lain untuk copy passive-nya'
+    awakeningText: 'Pilih 2 race lain untuk copy passive-nya sekaligus'
   }
 ];
 

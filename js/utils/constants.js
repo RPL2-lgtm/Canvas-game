@@ -66,8 +66,12 @@ G.CONST = {
   AWAKENING: {
     max: 100,                    // meter penuh di angka ini
     duration: 6,                 // detik awakening aktif
-    chargeFromDamageDealt: 0.4,  // tiap 1 damage yang DIBERIKAN, meter naik segini
-    chargeFromDamageTaken: 0.8   // tiap 1 damage yang DITERIMA, meter naik segini (lebih cepat, lebih beresiko)
+    chargeFromDamageDealt: 0.3,  // tiap 1 damage yang DIBERIKAN, meter naik segini
+    chargeFromDamageTaken: 0.3,   // tiap 1 damage yang DITERIMA, meter naik segini (lebih cepat, lebih beresiko)
+  },
+  DOMAIN: {
+    demonBaseRadius: 90,   // radius area bakar Demon (px), dobel pas Domain Expansion aktif
+    vampireRadius: 90      // radius serangan area Vampire pas Blood Domain aktif
   }
 
 

@@ -41,8 +41,8 @@ G.ui.hud = {
 
     ctx.font = '11px sans-serif';
     ctx.fillStyle = '#bbb';
-    const raceLabel = player.mimicRaceId
-      ? `${player.race.emoji} ${player.race.name} (copy: ${player.mimicRaceId})`
+    const raceLabel = player.mimicRaceIds && player.mimicRaceIds.length
+      ? `${player.race.emoji} ${player.race.name} (copy: ${player.mimicRaceIds.join(' + ')})`
       : `${player.race.emoji} ${player.race.name}`;
     ctx.fillText(raceLabel, pad + 90, y + 12);
     y += 22;

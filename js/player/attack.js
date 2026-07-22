@@ -34,10 +34,15 @@ G.player.attack = {
     const hitX = player.x + dir.x * range * 0.6;
     const hitY = player.y + dir.y * range * 0.6;
 
+    const vampireDomain = player.awakeningActive && player.awakeningTypes.includes('vampire');
+    const domainRadius = G.CONST.DOMAIN.vampireRadius;
+
+    const demonAwaken = player.awakeningActive && player.awakeningTypes.includes('demon');
+
     let dmgMult = 1;
 
     if (player.hasPassive('human')) {
-      if (player.awakeningActive && player.awakeningType === 'human') {
+      if (player.awakeningActive && player.awakeningTypes.includes('human')) {
         dmgMult += 1.3;
       } else {
         const hpPct = player.stats.hp / player.stats.totalMaxHP;
@@ -46,25 +51,33 @@ G.player.attack = {
     }
     if (player.hasPassive('demon')) {
       dmgMult *= 1 + player.demonKillStacks * 0.0005;
+      if (demonAwaken) {
+        dmgMult *= 1.15 + player._primordialStacks * 0.005;
+      }
     }
 
     enemies.forEach((enemy) => {
       if (enemy.dead) return;
-      const dist = G.utils.math.distance(hitX, hitY, enemy.x, enemy.y);
-      if (dist < range) {
-        const isCrit = Math.random() < player.stats.totalCrit;
-        const dmg = Math.round(player.stats.totalAtk * (isCrit ? 1.8 : 1) * dmgMult);
-        enemy.takeDamage(dmg);
 
-        player.chargeAwakening(dmg * G.CONST.AWAKENING.chargeFromDamageDealt);
-
-        if (player.hasPassive('vampire')) {
-          const lifestealPct = 0.15 + (player.awakeningActive && player.awakeningType === 'vampire' ? player._awakenVampireBonus : 0);
-          player.heal(dmg * lifestealPct);
-        }
-
-        if (onHit) onHit(enemy, dmg, isCrit);
+      let inRange;
+      if (vampireDomain) {
+        inRange = G.utils.math.distance(player.x, player.y, enemy.x, enemy.y) < domainRadius;
+      } else {
+        inRange = G.utils.math.distance(hitX, hitY, enemy.x, enemy.y) < range;
       }
+      if (!inRange) return;
+
+      const isCrit = Math.random() < player.stats.totalCrit;
+      const dmg = Math.round(player.stats.totalAtk * (isCrit ? 1.8 : 1) * dmgMult);
+      enemy.takeDamage(dmg);
+
+      player.chargeAwakening(dmg * G.CONST.AWAKENING.chargeFromDamageDealt);
+
+      if (demonAwaken) {
+        player._primordialStacks += 1;
+      }
+
+      if (onHit) onHit(enemy, dmg, isCrit);
     });
   }
 };

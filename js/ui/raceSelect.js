@@ -18,8 +18,6 @@ G.ui.raceSelect = {
     return '⭐'.repeat(n) + '☆'.repeat(5 - n);
   },
 
-  // Base Damage gak pakai star di data race (angka eksplisit), jadi diperkirakan
-  // ke jumlah bintang cuma buat tampilan biar konsisten sama stat lain.
   dmgStars(base) {
     if (base <= 2) return 2;
     if (base <= 3) return 3;
@@ -42,19 +40,29 @@ G.ui.raceSelect = {
     this.gridEl.innerHTML = G.player.RACES.map((r) => this.cardHtml(r)).join('');
     this.attachCardHandlers((raceId) => {
       if (raceId === 'anomaly') {
-        this.renderMimicGrid();
+        this.renderMimicGrid([]);
       } else {
-        this.finish(raceId, null);
+        this.finish(raceId, []);
       }
     });
   },
 
-  renderMimicGrid() {
-    this.titleEl.textContent = '🌀 Anomaly — Pilih Passive yang Mau Di-copy';
-    const options = G.player.RACES.filter((r) => r.id !== 'anomaly');
+  renderMimicGrid(pickedSoFar) {
+    const remaining = 2 - pickedSoFar.length;
+    const pickedLabel = pickedSoFar.length
+      ? ` (sudah pilih: ${pickedSoFar.join(', ')})`
+      : '';
+    this.titleEl.textContent = `🌀 Anomaly — Pilih ${remaining} Passive lagi yang Mau Di-copy${pickedLabel}`;
+
+    const options = G.player.RACES.filter((r) => r.id !== 'anomaly' && !pickedSoFar.includes(r.id));
     this.gridEl.innerHTML = options.map((r) => this.cardHtml(r, true)).join('');
     this.attachCardHandlers((mimicId) => {
-      this.finish('anomaly', mimicId);
+      const picked = [...pickedSoFar, mimicId];
+      if (picked.length < 2) {
+        this.renderMimicGrid(picked);
+      } else {
+        this.finish('anomaly', picked);
+      }
     });
   },
 
@@ -87,8 +95,8 @@ G.ui.raceSelect = {
     });
   },
 
-  finish(raceId, mimicRaceId) {
+  finish(raceId, mimicRaceIds) {
     this.hide();
-    if (this._onChosen) this._onChosen(raceId, mimicRaceId);
+    if (this._onChosen) this._onChosen(raceId, mimicRaceIds);
   }
 };

@@ -8,7 +8,7 @@ class Boss extends G.enemy.Enemy {
     super(x, y, {
       radius: 22,
       speed: 55,
-      hp: Math.round(140 * mult),
+      hp: Math.round(1400 * mult),
       damage: Math.round(14 * mult),
       expReward: 120,
       color: '#d35400',

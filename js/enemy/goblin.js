@@ -3,11 +3,11 @@ window.G = window.G || {};
 G.enemy = G.enemy || {};
 
 class Goblin extends G.enemy.Enemy {
-  constructor(x, y, hpMult = 1, dmgMult = 1) {
+  constructor(x, y, hpMult = 2, dmgMult = 1) {
     super(x, y, {
       radius: 11,
       speed: 95,
-      hp: Math.round(16 * hpMult),
+      hp: Math.round(40 * hpMult),
       damage: Math.round(3 * dmgMult), // diturunin dari 6 -> 3 karena musuh jauh lebih banyak sekarang
       expReward: 4, // diturunin juga biar exp gak meledak karena jumlah musuh banyak
       color: '#27ae60',

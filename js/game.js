@@ -2,12 +2,12 @@
 window.G = window.G || {};
 
 class Game {
-  constructor(canvas, assets, raceId = 'human', mimicRaceId = null) {
+  constructor(canvas, assets, raceId = 'human', mimicRaceIds = []) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.assets = assets;
     this.raceId = raceId;
-    this.mimicRaceId = mimicRaceId;
+    this.mimicRaceIds = mimicRaceIds;
 
     this.worldW = G.CONST.CANVAS_W * 2.2;
     this.worldH = G.CONST.CANVAS_H * 2.2;
@@ -28,7 +28,7 @@ class Game {
   }
 
   _setupPlayer() {
-    this.player = new G.player.Player(this.worldW / 2, this.worldH / 2, this.assets.playerSheet, this.raceId, this.mimicRaceId);
+    this.player = new G.player.Player(this.worldW / 2, this.worldH / 2, this.assets.playerSheet, this.raceId, this.mimicRaceIds);
     G.items.iconImage = this.assets.iconsSheet;
     // starter weapon supaya player tidak kosong tangan
     const starter = G.items.getById('sword_iron');
@@ -252,11 +252,11 @@ class Game {
 
   // raceId/mimicRaceId opsional: kalau gak dikasih (misal restart dari pause menu),
   // pakai race yang lagi aktif sekarang, jangan direset ke default.
-  restart(raceId, mimicRaceId) {
+  restart(raceId, mimicRaceIds) {
     G.ui.pause.hide();
     G.ui.gameOver.hide();
     this.raceId = raceId || this.raceId;
-    this.mimicRaceId = mimicRaceId !== undefined ? mimicRaceId : this.mimicRaceId;
+    this.mimicRaceIds = mimicRaceIds !== undefined ? mimicRaceIds : this.mimicRaceIds;
 
     this.waveManager = new G.wave.WaveManager(this.worldW, this.worldH);
     this._setupWaveManager();

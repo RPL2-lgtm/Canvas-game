@@ -3,13 +3,13 @@ window.G = window.G || {};
 G.player = G.player || {};
 
 class Player {
-  constructor(x, y, image, raceId = 'human', mimicRaceId = null) {
+  constructor(x, y, image, raceId = 'human', mimicRaceIds = []) {
     this.x = x;
     this.y = y;
     this.radius = 14;
 
     this.raceId = raceId;
-    this.mimicRaceId = mimicRaceId;
+    this.mimicRaceIds = Array.isArray(mimicRaceIds) ? mimicRaceIds : (mimicRaceIds ? [mimicRaceIds] : []);
     this.race = G.player.RACES.find((r) => r.id === raceId) || G.player.RACES[0];
 
     const base = G.player.buildStatsFromRace(this.race);
@@ -35,27 +35,30 @@ class Player {
     this.poison = { active: false, dps: 0, timeLeft: 0, tickTimer: 0 };
 
     this.demonKillStacks = 0;
+    this._primordialStacks = 0;
+    this._domainTickTimer = 0;
     this.reviveReady = this.hasPassive('undead');
     this.reviveCooldown = 0;
 
-    this.awakeningType = this.computeAwakeningType();
-    this.awakeningEligible = this.awakeningType !== null;
+    this.awakeningTypes = this.computeAwakeningTypes();
+    this.awakeningEligible = this.awakeningTypes.length > 0;
     this.awakeningMeter = 0;
     this.awakeningActive = false;
     this.awakeningTimer = 0;
-    this._awakenVampireBonus = 0;
     this._awakenAnomalyBonus = null;
   }
 
   hasPassive(raceId) {
-    return this.raceId === raceId || this.mimicRaceId === raceId;
+    return this.raceId === raceId || this.mimicRaceIds.includes(raceId);
   }
 
-  computeAwakeningType() {
-    if (this.hasPassive('human')) return 'human';
-    if (this.hasPassive('vampire')) return 'vampire';
-    if (this.raceId === 'anomaly') return 'anomaly';
-    return null;
+  computeAwakeningTypes() {
+    const types = [];
+    if (this.hasPassive('human')) types.push('human');
+    if (this.hasPassive('vampire')) types.push('vampire');
+    if (this.hasPassive('demon')) types.push('demon');
+    if (types.length === 0 && this.raceId === 'anomaly') types.push('anomaly');
+    return types;
   }
 
   update(dt, input, enemies, worldW, worldH, callbacks = {}) {
@@ -67,6 +70,48 @@ class Player {
     this.updatePoison(dt);
     this.updateRevive(dt);
     this.updateAwakening(dt, input);
+    this.updateVampireRegen(dt);
+    this.updateDemonDomain(dt, enemies, callbacks.onHitEnemy);
+  }
+
+  updateVampireRegen(dt) {
+    if (!this.hasPassive('vampire')) return;
+    const level = this.levelSystem.level;
+    const maxHP = this.stats.totalMaxHP;
+
+    let regenPerSec;
+    if (this.awakeningActive && this.awakeningTypes.includes('vampire')) {
+      regenPerSec = Math.min(2 + level * 0.0005 * maxHP, maxHP * 0.15);
+    } else {
+      regenPerSec = Math.min(1 + level * 0.05, maxHP * 0.07);
+    }
+    this.stats.hp = G.utils.math.clamp(this.stats.hp + regenPerSec * dt, 0, maxHP);
+  }
+
+  getDemonDomainRadius() {
+    const base = G.CONST.DOMAIN.demonBaseRadius;
+    const expanded = this.awakeningActive && this.awakeningTypes.includes('demon');
+    return expanded ? base * 2 : base;
+  }
+
+  updateDemonDomain(dt, enemies, onDamageEnemy) {
+    if (!this.hasPassive('demon')) return;
+    this._domainTickTimer += dt;
+    if (this._domainTickTimer < 1) return;
+    this._domainTickTimer -= 1;
+
+    const radius = this.getDemonDomainRadius();
+    const dot = this.levelSystem.level * 0.05;
+    if (dot <= 0) return;
+
+    enemies.forEach((enemy) => {
+      if (enemy.dead) return;
+      const dist = G.utils.math.distance(this.x, this.y, enemy.x, enemy.y);
+      if (dist <= radius) {
+        enemy.takeDamage(dot);
+        if (onDamageEnemy) onDamageEnemy(enemy, dot, false);
+      }
+    });
   }
 
   chargeAwakening(amount) {
@@ -93,10 +138,10 @@ class Player {
     this.awakeningTimer = G.CONST.AWAKENING.duration;
     this.awakeningMeter = 0;
 
-    if (this.awakeningType === 'vampire') {
-      this._awakenVampireBonus = 0.35;
+    if (this.awakeningTypes.includes('demon')) {
+      this._primordialStacks = 0;
     }
-    if (this.awakeningType === 'anomaly') {
+    if (this.awakeningTypes.includes('anomaly')) {
       const bonus = {
         atk: Math.round(this.stats.totalAtk * 0.3),
         def: Math.round(this.stats.totalDef * 0.3),
@@ -115,10 +160,7 @@ class Player {
     this.awakeningActive = false;
     this.awakeningTimer = 0;
 
-    if (this.awakeningType === 'vampire') {
-      this._awakenVampireBonus = 0;
-    }
-    if (this.awakeningType === 'anomaly' && this._awakenAnomalyBonus) {
+    if (this.awakeningTypes.includes('anomaly') && this._awakenAnomalyBonus) {
       const b = this._awakenAnomalyBonus;
       this.stats.bonus.atk -= b.atk;
       this.stats.bonus.def -= b.def;
@@ -180,7 +222,13 @@ class Player {
 
   takeDamage(amount) {
     if (this.invulnTimer > 0) return 0;
-    const dealt = this.stats.takeDamage(amount);
+
+    let incoming = amount;
+    if (this.awakeningActive && this.awakeningTypes.includes('demon')) {
+      incoming *= 0.75;
+    }
+
+    const dealt = this.stats.takeDamage(incoming);
     this.invulnTimer = 0.6;
     this.chargeAwakening(dealt * G.CONST.AWAKENING.chargeFromDamageTaken);
     return dealt;
@@ -204,6 +252,32 @@ class Player {
       ctx.beginPath();
       ctx.arc(screen.x, screen.y + 14, this.radius + 4, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+    }
+
+    if (this.hasPassive('demon')) {
+      const r = this.getDemonDomainRadius();
+      const expanded = this.awakeningActive && this.awakeningTypes.includes('demon');
+      ctx.save();
+      ctx.globalAlpha = expanded ? 0.35 : 0.15;
+      ctx.strokeStyle = '#e67e22';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (this.awakeningActive && this.awakeningTypes.includes('vampire')) {
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = '#c0392b';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, G.CONST.DOMAIN.vampireRadius, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.restore();
     }
 
