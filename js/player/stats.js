@@ -29,7 +29,12 @@ class Stats {
   }
 
   takeDamage(rawDamage) {
-    const mitigated = Math.max(1, rawDamage - this.totalDef);
+    // def meredam damage dalam PERSENTASE (bukan dipotong angka mentah), pakai formula
+    // def / (def + K) — makin tinggi def, makin besar % yang diredam, tapi gak akan pernah
+    // sampai 100% jadi damage besar tetap kerasa signifikan walau def-nya tinggi.
+    const K = 40; // konstanta balance: def=40 -> reduction 50%, def=12 -> reduction ~23%
+    const reduction = this.totalDef / (this.totalDef + K);
+    const mitigated = Math.max(1, Math.round(rawDamage * (1 - reduction)));
     this.hp = G.utils.math.clamp(this.hp - mitigated, 0, this.totalMaxHP);
     return mitigated;
   }
