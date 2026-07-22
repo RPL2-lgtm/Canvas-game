@@ -62,5 +62,15 @@ G.CONST = {
     spawnWindowSeconds: 8 // semua musuh di 1 wave selesai muncul dalam ~8 detik, walau jumlahnya banyak
   },
 
-  STORAGE_KEY: 'canvas_game_save_v1'
+  STORAGE_KEY: 'canvas_game_save_v1',
+  AWAKENING: {
+    max: 100,                    // meter penuh di angka ini
+    duration: 6,                 // detik awakening aktif
+    chargeFromDamageDealt: 0.4,  // tiap 1 damage yang DIBERIKAN, meter naik segini
+    chargeFromDamageTaken: 0.8   // tiap 1 damage yang DITERIMA, meter naik segini (lebih cepat, lebih beresiko)
+  }
+
+
+
+  
 };

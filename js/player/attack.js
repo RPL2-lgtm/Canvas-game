@@ -22,7 +22,6 @@ G.player.attack = {
     const wantsAttack = input.isDown('Space') || input.mouse.justClicked;
     if (wantsAttack && player.attackTimer <= 0) {
       this.performAttack(player, enemies, onHit);
-      // attackCooldownMult dari race (misal Elf/Demon nyerang lebih cepat)
       player.attackTimer = this.cooldown * (player.attackCooldownMult || 1);
       player.isSwinging = true;
       player.swingTimer = 0.18;
@@ -35,15 +34,16 @@ G.player.attack = {
     const hitX = player.x + dir.x * range * 0.6;
     const hitY = player.y + dir.y * range * 0.6;
 
-    // --- passive yang mempengaruhi multiplier damage ---
     let dmgMult = 1;
 
-    // Human: makin rendah HP, makin gede damage (Rage, maks +130%)
     if (player.hasPassive('human')) {
-      const hpPct = player.stats.hp / player.stats.totalMaxHP;
-      dmgMult += (1 - hpPct) * 1.3;
+      if (player.awakeningActive && player.awakeningType === 'human') {
+        dmgMult += 1.3;
+      } else {
+        const hpPct = player.stats.hp / player.stats.totalMaxHP;
+        dmgMult += (1 - hpPct) * 1.3;
+      }
     }
-    // Demon: +0.05% damage tiap kill, menumpuk selamanya
     if (player.hasPassive('demon')) {
       dmgMult *= 1 + player.demonKillStacks * 0.0005;
     }
@@ -56,9 +56,11 @@ G.player.attack = {
         const dmg = Math.round(player.stats.totalAtk * (isCrit ? 1.8 : 1) * dmgMult);
         enemy.takeDamage(dmg);
 
-        // Vampire: Life Steal 15% dari damage yang diberikan
+        player.chargeAwakening(dmg * G.CONST.AWAKENING.chargeFromDamageDealt);
+
         if (player.hasPassive('vampire')) {
-          player.heal(dmg * 0.15);
+          const lifestealPct = 0.15 + (player.awakeningActive && player.awakeningType === 'vampire' ? player._awakenVampireBonus : 0);
+          player.heal(dmg * lifestealPct);
         }
 
         if (onHit) onHit(enemy, dmg, isCrit);

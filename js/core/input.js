@@ -14,7 +14,7 @@ class Input {
     this._canvas = canvas;
     const GAME_KEYS = new Set([
       'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'KeyI', 'KeyC', 'Escape'
+      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'KeyI', 'KeyC', 'KeyF', 'Escape'
     ]);
     window.addEventListener('keydown', (e) => {
       if (GAME_KEYS.has(e.code)) {

@@ -9,7 +9,7 @@ class Player {
     this.radius = 14;
 
     this.raceId = raceId;
-    this.mimicRaceId = mimicRaceId; // dipakai khusus Anomaly buat "copy" passive race lain
+    this.mimicRaceId = mimicRaceId;
     this.race = G.player.RACES.find((r) => r.id === raceId) || G.player.RACES[0];
 
     const base = G.player.buildStatsFromRace(this.race);
@@ -27,23 +27,35 @@ class Player {
     this.isMoving = false;
 
     this.equippedWeapon = 'sword';
-    this.inventory = []; // list item id yang sudah dipungut
+    this.inventory = [];
     this.gold = 0;
 
-    this.invulnTimer = 0; // jeda kebal sesaat setelah kena hit
+    this.invulnTimer = 0;
 
-    // status racun: dps = damage per detik, timeLeft = sisa durasi racun aktif
     this.poison = { active: false, dps: 0, timeLeft: 0, tickTimer: 0 };
 
-    // state khusus passive race
-    this.demonKillStacks = 0;     // Demon: +0.05% damage tiap kill, menumpuk
+    this.demonKillStacks = 0;
     this.reviveReady = this.hasPassive('undead');
-    this.reviveCooldown = 0;      // Undead: revive tiap 120 detik
+    this.reviveCooldown = 0;
+
+    this.awakeningType = this.computeAwakeningType();
+    this.awakeningEligible = this.awakeningType !== null;
+    this.awakeningMeter = 0;
+    this.awakeningActive = false;
+    this.awakeningTimer = 0;
+    this._awakenVampireBonus = 0;
+    this._awakenAnomalyBonus = null;
   }
 
-  // true kalau race player ATAU race yang di-mimic (khusus Anomaly) cocok
   hasPassive(raceId) {
     return this.raceId === raceId || this.mimicRaceId === raceId;
+  }
+
+  computeAwakeningType() {
+    if (this.hasPassive('human')) return 'human';
+    if (this.hasPassive('vampire')) return 'vampire';
+    if (this.raceId === 'anomaly') return 'anomaly';
+    return null;
   }
 
   update(dt, input, enemies, worldW, worldH, callbacks = {}) {
@@ -54,16 +66,74 @@ class Player {
     if (this.invulnTimer > 0) this.invulnTimer -= dt;
     this.updatePoison(dt);
     this.updateRevive(dt);
+    this.updateAwakening(dt, input);
   }
 
-  // Undead: hitung mundur cooldown revive selama belum "siap"
+  chargeAwakening(amount) {
+    if (!this.awakeningEligible || this.awakeningActive) return;
+    this.awakeningMeter = Math.min(G.CONST.AWAKENING.max, this.awakeningMeter + amount);
+  }
+
+  canActivateAwakening() {
+    return this.awakeningEligible && !this.awakeningActive && this.awakeningMeter >= G.CONST.AWAKENING.max;
+  }
+
+  updateAwakening(dt, input) {
+    if (input.wasPressed('KeyF') && this.canActivateAwakening()) {
+      this.activateAwakening();
+    }
+    if (this.awakeningActive) {
+      this.awakeningTimer -= dt;
+      if (this.awakeningTimer <= 0) this.deactivateAwakening();
+    }
+  }
+
+  activateAwakening() {
+    this.awakeningActive = true;
+    this.awakeningTimer = G.CONST.AWAKENING.duration;
+    this.awakeningMeter = 0;
+
+    if (this.awakeningType === 'vampire') {
+      this._awakenVampireBonus = 0.35;
+    }
+    if (this.awakeningType === 'anomaly') {
+      const bonus = {
+        atk: Math.round(this.stats.totalAtk * 0.3),
+        def: Math.round(this.stats.totalDef * 0.3),
+        speed: Math.round(this.stats.totalSpeed * 0.3),
+        critChance: 0.1
+      };
+      this._awakenAnomalyBonus = bonus;
+      this.stats.bonus.atk += bonus.atk;
+      this.stats.bonus.def += bonus.def;
+      this.stats.bonus.speed += bonus.speed;
+      this.stats.bonus.critChance += bonus.critChance;
+    }
+  }
+
+  deactivateAwakening() {
+    this.awakeningActive = false;
+    this.awakeningTimer = 0;
+
+    if (this.awakeningType === 'vampire') {
+      this._awakenVampireBonus = 0;
+    }
+    if (this.awakeningType === 'anomaly' && this._awakenAnomalyBonus) {
+      const b = this._awakenAnomalyBonus;
+      this.stats.bonus.atk -= b.atk;
+      this.stats.bonus.def -= b.def;
+      this.stats.bonus.speed -= b.speed;
+      this.stats.bonus.critChance -= b.critChance;
+      this._awakenAnomalyBonus = null;
+    }
+  }
+
   updateRevive(dt) {
     if (!this.hasPassive('undead') || this.reviveReady) return;
     this.reviveCooldown -= dt;
     if (this.reviveCooldown <= 0) this.reviveReady = true;
   }
 
-  // dipanggil dari game.js pas player mau mati; return true kalau berhasil revive
   tryRevive() {
     if (!this.hasPassive('undead') || !this.reviveReady) return false;
     this.stats.hp = Math.round(this.stats.totalMaxHP * 0.5);
@@ -72,22 +142,17 @@ class Player {
     return true;
   }
 
-  // dipanggil tiap ada musuh mati (dipakai buat stacking damage Demon)
   registerKill() {
     this.demonKillStacks += 1;
   }
 
-  // Semua efek heal (potion dsb) harus lewat sini, bukan langsung stats.heal(),
-  // biar modifier race (Undead -50%, Elf +15%) otomatis kepakai di mana pun.
   heal(amount) {
     let final = amount;
-    if (this.hasPassive('undead')) final *= 0.5;  // trade-off: efek heal berkurang
-    if (this.hasPassive('elf')) final *= 1.15;     // efek potion +15%
+    if (this.hasPassive('undead')) final *= 0.5;
+    if (this.hasPassive('elf')) final *= 1.15;
     this.stats.heal(final);
   }
 
-  // racun damage-nya tetap jalan walau lagi invulnerable (racun bukan hit langsung,
-  // jadi gak kena mekanisme kebal sesaat)
   updatePoison(dt) {
     if (!this.poison.active) return;
     this.poison.timeLeft -= dt;
@@ -100,7 +165,6 @@ class Player {
   }
 
   applyPoison(dps, duration) {
-    // Vampire weakness: racun 2x lebih parah
     const finalDps = this.hasPassive('vampire') ? dps * 2 : dps;
     this.poison.active = true;
     this.poison.dps = Math.max(this.poison.dps, finalDps);
@@ -118,11 +182,11 @@ class Player {
     if (this.invulnTimer > 0) return 0;
     const dealt = this.stats.takeDamage(amount);
     this.invulnTimer = 0.6;
+    this.chargeAwakening(dealt * G.CONST.AWAKENING.chargeFromDamageTaken);
     return dealt;
   }
 
   grantExp(amount) {
-    // XP Gain star race dikalikan di sini
     return this.levelSystem.grantExp(Math.round(amount * this.expMultiplier));
   }
 
@@ -133,7 +197,6 @@ class Player {
   draw(ctx, camera) {
     const screen = camera.worldToScreen(this.x, this.y);
 
-    // indikator status racun
     if (this.poison.active) {
       ctx.save();
       ctx.globalAlpha = 0.35 + Math.sin(performance.now() / 150) * 0.1;
@@ -144,7 +207,17 @@ class Player {
       ctx.restore();
     }
 
-    // efek kedip saat invulnerable
+    if (this.awakeningActive) {
+      ctx.save();
+      ctx.globalAlpha = 0.3 + Math.sin(performance.now() / 100) * 0.15;
+      ctx.strokeStyle = '#ff5fd1';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, this.radius + 8, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     if (this.invulnTimer > 0 && Math.floor(this.invulnTimer * 20) % 2 === 0) {
       ctx.globalAlpha = 0.4;
     }
@@ -152,7 +225,6 @@ class Player {
     this.animator.draw(ctx, screen.x, screen.y);
     ctx.globalAlpha = 1;
 
-    // ayunan senjata sederhana: icon senjata muncul di sisi arah hadap saat menyerang
     if (this.isSwinging) {
       const icon = G.items.iconImage;
       const rect = G.CONST.ICONS[this.equippedWeapon] || G.CONST.ICONS.sword;
