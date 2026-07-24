@@ -8,6 +8,8 @@ G.items.register({
   type: 'consumable',
   rarity: 'common',
   iconKey: 'potion',
+  iconSheet: 'potion',
+  iconRect: { x: 32, y: 32, w: 16, h: 32 },
   symbol: '🟢',
   description: 'Pulihkan 30% dari Max HP',
   onUse(player) {
@@ -22,6 +24,8 @@ G.items.register({
   type: 'consumable',
   rarity: 'common',
   iconKey: 'heart',
+  iconSheet: 'potion',
+  iconRect: { x: 0, y: 0, w: 16, h: 32 },
   symbol: '🔴',
   description: 'Hilangkan efek racun',
   onUse(player) {

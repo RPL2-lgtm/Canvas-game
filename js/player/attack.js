@@ -12,15 +12,14 @@ const DIR_VECTOR = {
 G.player.attack = {
   cooldown: 0.35,
 
-  update(player, input, dt, enemies, onHit) {
+  update(player, dt, enemies, onHit) {
     if (player.attackTimer > 0) player.attackTimer -= dt;
     if (player.swingTimer > 0) {
       player.swingTimer -= dt;
       if (player.swingTimer <= 0) player.isSwinging = false;
     }
 
-    const wantsAttack = input.isDown('Space') || input.mouse.justClicked;
-    if (wantsAttack && player.attackTimer <= 0) {
+    if (player.attackTimer <= 0) {
       this.performAttack(player, enemies, onHit);
       player.attackTimer = this.cooldown * (player.attackCooldownMult || 1);
       player.isSwinging = true;
@@ -39,7 +38,7 @@ G.player.attack = {
 
     const demonAwaken = player.awakeningActive && player.awakeningTypes.includes('demon');
 
-    let dmgMult = 1;
+    let dmgMult = 1 * player.getArmorAtkMult();
 
     if (player.hasPassive('human')) {
       if (player.awakeningActive && player.awakeningTypes.includes('human')) {
@@ -50,10 +49,7 @@ G.player.attack = {
       }
     }
     if (player.hasPassive('demon')) {
-      dmgMult *= 1 + player.demonKillStacks * 0.0005;
-      if (demonAwaken) {
-        dmgMult *= 1.15 + player._primordialStacks * 0.005;
-      }
+      
     }
 
     enemies.forEach((enemy) => {

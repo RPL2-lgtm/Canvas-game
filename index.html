@@ -69,7 +69,19 @@
 
   <!-- ===== Game Canvas ===== -->
   <canvas id="game-canvas" tabindex="-1"></canvas>
-  <div id="hud-hint">WASD gerak · Space serang · E buka chest · I inventory · C statistik · Esc pause</div>
+  <div id="hud-hint">WASD gerak · Space serang · E buka chest · I inventory · C statistik · F Awakening · Esc pause</div>
+
+  <!-- ===== Mobile Touch Controls (cuma nongol otomatis di device touch) ===== -->
+  <div id="touch-joystick-base" class="touch-joystick-base">
+    <div id="touch-joystick-knob" class="touch-joystick-knob"></div>
+  </div>
+  <div id="touch-button-row" class="touch-button-row">
+    <button id="touch-btn-e" class="touch-btn" type="button">E</button>
+    <button id="touch-btn-i" class="touch-btn" type="button">I</button>
+    <button id="touch-btn-c" class="touch-btn" type="button">C</button>
+    <button id="touch-btn-f" class="touch-btn" type="button">F</button>
+    <button id="touch-btn-esc" class="touch-btn" type="button">✕</button>
+  </div>
 
 </div>
 
@@ -86,6 +98,7 @@
 <script src="js/core/camera.js"></script>
 <script src="js/core/collision.js"></script>
 <script src="js/core/save.js"></script>
+<script src="js/core/touchControls.js"></script>
 
 <!-- items (harus sebelum chest & player karena dipakai keduanya) -->
 <script src="js/items/item.js"></script>
@@ -95,6 +108,7 @@
 <script src="js/items/shield.js"></script>
 <script src="js/items/potion.js"></script>
 <script src="js/items/luck.js"></script>
+<script src="js/items/armor.js"></script>
 
 <!-- player -->
 <script src="js/player/races.js"></script>
@@ -104,6 +118,7 @@
 <script src="js/player/animation.js"></script>
 <script src="js/player/movement.js"></script>
 <script src="js/player/attack.js"></script>
+<script src="js/player/gun.js"></script>
 <script src="js/player/player.js"></script>
 
 <!-- enemy -->

@@ -72,7 +72,19 @@ G.CONST = {
   DOMAIN: {
     demonBaseRadius: 90,   // radius area bakar Demon (px), dobel pas Domain Expansion aktif
     vampireRadius: 90      // radius serangan area Vampire pas Blood Domain aktif
-  }
+  },
+  BULLET_ICON: { x: 220, y: 130, w: 60, h: 60 },
+
+  GUN: {
+    purpleAtLevel: 20,
+    cooldown: 1.1,
+    range: 320,
+    speed: 420,
+    damageMult: 0.5
+  },
+
+  ARMOUR_SHEET: { w: 128, h: 256, cellW: 32, cellH: 32 },
+  POTION_SHEET: { w: 64, h: 192, cellW: 16, cellH: 32 }
 
 
 

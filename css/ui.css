@@ -143,3 +143,68 @@
   font-weight: 700;
   margin-bottom: 10px;
 }
+.sprite-icon {
+  display: inline-block;
+  image-rendering: pixelated;
+  background-repeat: no-repeat;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.armor-section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.armor-section h4 {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: #ddd;
+}
+.armor-set-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+.armor-set-card.set-complete {
+  border-color: #6ee08a;
+  background: rgba(110,224,138,0.06);
+}
+.armor-set-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.set-complete-tag {
+  color: #6ee08a;
+  font-size: 10px;
+}
+.armor-set-total {
+  margin-left: auto;
+  color: #ffce6b;
+  font-size: 10px;
+}
+.armor-piece-list {
+  display: flex;
+  gap: 8px;
+}
+.armor-piece {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  opacity: 0.4;
+}
+.armor-piece.owned {
+  opacity: 1;
+}
+.armor-piece small {
+  color: #bbb;
+  text-transform: capitalize;
+}

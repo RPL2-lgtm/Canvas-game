@@ -7,6 +7,7 @@ window.G = window.G || {};
   canvas.height = G.CONST.CANVAS_H;
 
   G.core.input.init(canvas);
+  G.core.touchControls.init(G.core.input);
   G.ui.raceSelect.init();
 
   const menuEl = document.getElementById('main-menu');
@@ -17,7 +18,11 @@ window.G = window.G || {};
   try {
     assets = await G.utils.helper.loadImages({
       playerSheet: 'assets/player/run_anim_sheet.png',
-      iconsSheet: 'assets/items/icons_sheet.png'
+      iconsSheet: 'assets/items/icons_sheet.png',
+      armourSheet: 'assets/items/armour.png',
+      potionSheet: 'assets/items/potion.png',
+      blueBullet: 'assets/items/blue_bullet.png',
+      purpleBullet: 'assets/items/purple_bullet.png'
     });
     loadingEl.textContent = 'Siap dimainkan!';
     startBtn.disabled = false;

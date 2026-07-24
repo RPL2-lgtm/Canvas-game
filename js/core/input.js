@@ -7,6 +7,7 @@ class Input {
     this.keys = new Set();
     this.justPressed = new Set();
     this.mouse = { x: 0, y: 0, down: false, justClicked: false };
+    this.touchAxis = { x: 0, y: 0 };
     this._canvas = null;
   }
 
@@ -18,7 +19,6 @@ class Input {
     ]);
     window.addEventListener('keydown', (e) => {
       if (GAME_KEYS.has(e.code)) {
-        // penting: cegah Space/Arrow trigger scroll atau klik ulang tombol yang lagi fokus
         e.preventDefault();
       }
       if (!this.keys.has(e.code)) this.justPressed.add(e.code);
@@ -48,7 +48,10 @@ class Input {
     return this.justPressed.has(code);
   }
 
-  // Dipanggil di akhir tiap frame oleh game loop supaya "just pressed" cuma valid 1 frame.
+  simulateKeyPress(code) {
+    this.justPressed.add(code);
+  }
+
   endFrame() {
     this.justPressed.clear();
     this.mouse.justClicked = false;
@@ -60,6 +63,11 @@ class Input {
     if (this.isDown('KeyD') || this.isDown('ArrowRight')) x += 1;
     if (this.isDown('KeyW') || this.isDown('ArrowUp')) y -= 1;
     if (this.isDown('KeyS') || this.isDown('ArrowDown')) y += 1;
+
+    if (this.touchAxis.x !== 0 || this.touchAxis.y !== 0) {
+      x = this.touchAxis.x;
+      y = this.touchAxis.y;
+    }
     return { x, y };
   }
 }

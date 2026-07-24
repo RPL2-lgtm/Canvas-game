@@ -3,18 +3,27 @@ window.G = window.G || {};
 G.wave = G.wave || {};
 
 G.wave.difficulty = {
-  // HP musuh naik pelan-pelan biar gak jadi damage sponge yang keterlaluan
+
+  // HP naik eksponensial
   hpMultiplierFor(waveNumber) {
-    return 1 + waveNumber * 0.10;
+    return Math.pow(2.0, waveNumber);
   },
-  // damage musuh naik lebih cepat tiap wave — makin lama makin berbahaya walau HP-nya gak segila itu
+
+  // Damage naik sedikit lebih pelan
   dmgMultiplierFor(waveNumber) {
-    return 1 + waveNumber * 0.18;
+    return Math.pow(1.35, waveNumber);
   },
+
+  // Jumlah musuh
   enemyCountFor(waveNumber) {
-    return Math.round(G.CONST.WAVE.baseEnemyCount + waveNumber * G.CONST.WAVE.countPerWave);
+    return Math.round(
+      G.CONST.WAVE.baseEnemyCount +
+      waveNumber * G.CONST.WAVE.countPerWave
+    );
   },
+
   isBossWave(waveNumber) {
     return waveNumber % 5 === 0;
   }
+
 };

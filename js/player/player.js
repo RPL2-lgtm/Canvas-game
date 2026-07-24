@@ -25,6 +25,7 @@ class Player {
     this.swingTimer = 0;
     this.isSwinging = false;
     this.isMoving = false;
+    this.gunTimer = 0;
 
     this.equippedWeapon = 'sword';
     this.inventory = [];
@@ -39,6 +40,9 @@ class Player {
     this._domainTickTimer = 0;
     this.reviveReady = this.hasPassive('undead');
     this.reviveCooldown = 0;
+
+    this.armorStacks = {};
+    this._armorAppliedBonus = { def: 0, maxHP: 0, critChance: 0 };
 
     this.awakeningTypes = this.computeAwakeningTypes();
     this.awakeningEligible = this.awakeningTypes.length > 0;
@@ -64,7 +68,9 @@ class Player {
   update(dt, input, enemies, worldW, worldH, callbacks = {}) {
     G.player.movement.update(this, input, dt, worldW, worldH);
     this.animator.update(dt);
-    G.player.attack.update(this, input, dt, enemies, callbacks.onHitEnemy);
+
+    G.player.attack.update(this, dt, enemies, callbacks.onHitEnemy);
+    G.player.gun.update(this, dt, enemies, callbacks.spawnProjectile);
 
     if (this.invulnTimer > 0) this.invulnTimer -= dt;
     this.updatePoison(dt);
@@ -74,6 +80,51 @@ class Player {
     this.updateDemonDomain(dt, enemies, callbacks.onHitEnemy);
   }
 
+  pickupArmor(id, setId, pieceType) {
+    this.armorStacks[id] = (this.armorStacks[id] || 0) + 1;
+    this.recalcArmorBonuses();
+  }
+
+  hasFullArmorSet(setId) {
+    const pieces = G.items.registry.filter((it) => it.type === 'armor_set' && it.setId === setId);
+    return pieces.length > 0 && pieces.every((p) => (this.armorStacks[p.id] || 0) > 0);
+  }
+
+  getArmorSetTotal(setId) {
+    const set = G.items.ARMOR_SETS[setId];
+    if (!set) return 0;
+    const pieces = G.items.registry.filter((it) => it.type === 'armor_set' && it.setId === setId);
+    let total = 0;
+    pieces.forEach((p) => {
+      const stacks = this.armorStacks[p.id] || 0;
+      if (stacks > 0) total += set.pieceBase + (stacks - 1) * set.pieceStack;
+    });
+    if (this.hasFullArmorSet(setId)) total += set.setBonus;
+    return total;
+  }
+
+  getArmorAtkMult() {
+    return 1 + this.getArmorSetTotal('crimson');
+  }
+
+  recalcArmorBonuses() {
+    this.stats.bonus.def -= this._armorAppliedBonus.def;
+    this.stats.bonus.critChance -= this._armorAppliedBonus.critChance;
+
+    const newDef = this.getArmorSetTotal('obsidian');
+    const newCrit = this.getArmorSetTotal('amethyst');
+    const newMaxHP = this.getArmorSetTotal('golden');
+
+    this.stats.bonus.def += newDef;
+    this.stats.bonus.critChance += newCrit;
+
+    const maxHPDelta = newMaxHP - this._armorAppliedBonus.maxHP;
+    this.stats.bonus.maxHP += maxHPDelta;
+    if (maxHPDelta > 0) this.stats.hp += maxHPDelta;
+
+    this._armorAppliedBonus = { def: newDef, maxHP: newMaxHP, critChance: newCrit };
+  }
+
   updateVampireRegen(dt) {
     if (!this.hasPassive('vampire')) return;
     const level = this.levelSystem.level;
@@ -81,9 +132,9 @@ class Player {
 
     let regenPerSec;
     if (this.awakeningActive && this.awakeningTypes.includes('vampire')) {
-      regenPerSec = Math.min(2 + level * 0.0005 * maxHP, maxHP * 0.15);
+      regenPerSec = Math.min(2 + level * 2 * maxHP, maxHP * 0.15);
     } else {
-      regenPerSec = Math.min(1 + level * 0.05, maxHP * 0.07);
+      regenPerSec = Math.min(0.5 + level * 1.5, maxHP * 0.07);
     }
     this.stats.hp = G.utils.math.clamp(this.stats.hp + regenPerSec * dt, 0, maxHP);
   }
@@ -95,22 +146,40 @@ class Player {
   }
 
   updateDemonDomain(dt, enemies, onDamageEnemy) {
-    if (!this.hasPassive('demon')) return;
+    if (!this.hasPassive("demon")) return;
+
     this._domainTickTimer += dt;
-    if (this._domainTickTimer < 1) return;
-    this._domainTickTimer -= 1;
+
+    // Tick setiap 0.25 detik
+    if (this._domainTickTimer < 0.25) return;
+    this._domainTickTimer = 0;
 
     const radius = this.getDemonDomainRadius();
-    const dot = this.levelSystem.level * 0.05;
-    if (dot <= 0) return;
 
-    enemies.forEach((enemy) => {
+    // BASE DAMAGE DOMAIN
+    let damage =
+        (this.levelSystem.level * 2) +
+        (this.stats.totalAtk * 0.30);
+
+    // Stack Demon
+    damage *= (1 + this.demonKillStacks * 0.0005);
+
+    // Armor Crimson
+    damage *= this.getArmorAtkMult();
+
+    // Awakening Demon
+    if (this.awakeningActive && this.awakeningTypes.includes("demon")) {
+        damage *= (1.15 + this._primordialStacks * 0.005);
+    }
+
+    damage = Math.round(damage);
+
+    enemies.forEach(enemy => {
       if (enemy.dead) return;
       const dist = G.utils.math.distance(this.x, this.y, enemy.x, enemy.y);
-      if (dist <= radius) {
-        enemy.takeDamage(dot);
-        if (onDamageEnemy) onDamageEnemy(enemy, dot, false);
-      }
+      if (dist > radius) return;
+      enemy.takeDamage(damage);
+      if (onDamageEnemy) onDamageEnemy(enemy, damage, false);
     });
   }
 
