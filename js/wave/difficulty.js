@@ -11,7 +11,7 @@ G.wave.difficulty = {
 
   // Damage naik sedikit lebih pelan
   dmgMultiplierFor(waveNumber) {
-    return Math.pow(1.35, waveNumber);
+    return Math.pow(1.15, waveNumber);
   },
 
   // Jumlah musuh
